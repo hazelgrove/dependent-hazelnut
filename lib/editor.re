@@ -25,6 +25,7 @@ type edit_action =
   | GiveExp(exp)
   | FillVar
   | Refine
+  | MakeLemma
   | Auto
   | FullAuto;
 
@@ -162,6 +163,7 @@ let rec apply_zexp = (a: edit_action, z: zexp): zexp => {
   | (GiveExp(e), z) => give_exp(z, e)
   | (FillVar, z) => fill_var(z)
   | (Refine, z) => refine(z)
+  | (MakeLemma, z) => make_lemma(z)
   | (Auto, z) => auto(z)
   | (FullAuto, z) => full_auto(z)
   // | (GiveExp(e), Cursor(Hole)) => Cursor(e)

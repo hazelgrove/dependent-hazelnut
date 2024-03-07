@@ -35,7 +35,9 @@ let action_of_key =
   | KeyI => Some(Edit(AddString(shift ? "I" : "i")))
   | KeyJ => Some(Edit(AddString(shift ? "J" : "j")))
   | KeyK => Some(Edit(AddString(shift ? "K" : "k")))
-  | KeyL => Some(Edit(AddString(shift ? "L" : "l")))
+  | KeyL =>
+    control
+      ? Some(Edit(MakeLemma)) : Some(Edit(AddString(shift ? "L" : "l")))
   | KeyM => Some(Edit(AddString(shift ? "M" : "m")))
   | KeyN => Some(Edit(AddString(shift ? "N" : "n")))
   | KeyO => Some(Edit(AddString(shift ? "O" : "o")))

@@ -85,6 +85,46 @@ let refine = (z: zexp) => {
   };
 };
 
+let var_for_lemma = (c: context) => {
+  let rec next_hnum = (acc: int, c: context) =>
+    switch (c) {
+    | [] => acc
+    | [(x, _), ...c'] =>
+      if (starts_with(x, ~prefix="h")) {
+        let substring: string = String.sub(x, 1, String.length(x) - 1);
+        switch (int_of_string(substring)) {
+        | acc' => next_hnum(Int.max(acc, acc'), c')
+        | exception _ => next_hnum(acc, c')
+        };
+      } else {
+        next_hnum(acc, c');
+      }
+    };
+  "h" ++ string_of_int(next_hnum(0, c) + 1);
+};
+
+let rec insert_lemma = (z: zexp, s: string, g: typ) =>
+  switch (z) {
+  | Cursor(_)
+  | LAp(_, _)
+  | RAp(_, _)
+  | XFun(_, _, _)
+  | TFun(_, _, _)
+  | XLet(_, _, _, _)
+  | TLet(_, _, _, _) => Cursor(Let(Text(s), g, Hole, exp_of_zexp(z)))
+  | Mark(m, z) => Mark(m, insert_lemma(z, s, g))
+  | EFun(x, t, z) => EFun(x, t, insert_lemma(z, s, g))
+  | E1Let(x, t, z, e) => E1Let(x, t, insert_lemma(z, s, g), e)
+  | E2Let(x, t, e, z) => E2Let(x, t, e, insert_lemma(z, s, g))
+  };
+
+let make_lemma = (z: zexp) => {
+  let lemma_name = var_for_lemma(local_context([], z));
+  let z = give_exp(z, Var(lemma_name));
+  let z = insert_lemma(z, lemma_name, local_goal([], Hole, z));
+  focus_hole(z);
+};
+
 let rec typ_endswith = (arg_acc: int, t1, t2) =>
   if (t1 == t2) {
     Some(arg_acc);
@@ -158,12 +198,51 @@ let rec refinable_position = z =>
   | E2Let(_, _, _, z) => refinable_position(z)
   };
 
-let auto = (z: zexp) => {
-  let z = fill_var(z); // First try solving directly by assumption
-  switch (local_goal([], Hole, z)) {
-  | Arrow(_, _) when refinable_position(z) => refine(z) // Then refine, if in a good spot to
-  | _ => suggest_ap(focus_hole(z)) // Otherwise, try using an implication in the context
+let rec cursor_at_zhole = (z: zexp) =>
+  switch (z) {
+  | Cursor(e) => e == Hole
+  | Mark(_, z) => cursor_at_zhole(z)
+  | XFun(_, _, _)
+  | TFun(_, _, _) => false
+  | EFun(_, _, z)
+  | LAp(z, _)
+  | RAp(_, z) => cursor_at_zhole(z)
+  | XLet(_, _, _, _)
+  | TLet(_, _, _, _) => false
+  | E1Let(_, _, z, _)
+  | E2Let(_, _, _, z) => cursor_at_zhole(z)
   };
+
+let rec chain_tactics = (z: zexp, ts: list(zexp => zexp)) =>
+  switch (ts) {
+  | [] => z
+  | [t, ...ts] =>
+    let z' = t(z);
+    if (z == z') {
+      chain_tactics(z, ts);
+    } else {
+      z';
+    };
+  };
+
+let auto = (z: zexp) => {
+  let smart_refine = z => {
+    switch (local_goal([], Hole, z)) {
+    | Arrow(_, _) when refinable_position(z) => refine(z)
+    | _ => z
+    };
+  };
+  let smart_make_lemma = z => {
+    switch (local_goal([], Hole, z)) {
+    | Arrow(t1, t2) when complete_typ(Arrow(t1, t2)) && cursor_at_zhole(z) =>
+      make_lemma(z)
+    | _ => z
+    };
+  };
+  chain_tactics(
+    focus_hole(z),
+    [fill_var, smart_refine, suggest_ap, smart_make_lemma],
+  );
 };
 
 let set_cursor_to_bounds_name = (bounds: zname, z: zname): zname =>
