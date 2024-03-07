@@ -55,8 +55,7 @@ let rec dom_of_exp = (c: context, completes: list(string), e: exp): Node.t =>
   | Var(x) => text(x)
   | Fun(x, t, e) =>
     let c' = extend_context_name(x, t, c);
-    let completes' =
-      complete_typ(t) ? extend_list_name(x, completes) : completes;
+    let completes' = extend_complete_list_fun(x, t, completes);
     block_indent(
       [dom_of_name(x), text(":"), dom_of_typ(t), text("→")],
       dom_of_exp(c', completes', e),
@@ -71,9 +70,7 @@ let rec dom_of_exp = (c: context, completes: list(string), e: exp): Node.t =>
     ])
   | Let(x, t, e1, e2) =>
     let c' = extend_context_name(x, t, c);
-    let completes' =
-      complete_typ(t) && complete_exp(completes, e)
-        ? extend_list_name(x, completes) : completes;
+    let completes' = extend_complete_list_let(x, t, e1, completes);
     sub_block(
       [
         check_let(c, t, completes, e1) ? Node.text("🟩") : Node.text(""),

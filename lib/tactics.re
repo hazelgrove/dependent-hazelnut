@@ -210,7 +210,7 @@ let rec chain_tactics = (z: zexp, ts: list(zexp => zexp)) =>
     };
   };
 
-let auto = (~next=true, z: zexp) => {
+let auto = (~seek=true, z: zexp) => {
   let smart_refine = z => {
     switch (local_goal([], Hole, z)) {
     | Arrow(_, _) when refinable_position(z) => refine(z)
@@ -233,7 +233,7 @@ let auto = (~next=true, z: zexp) => {
   chain_tactics(
     z,
     [focus_hole, fill_var, smart_refine, suggest_ap, smart_make_lemma]
-    @ (next ? [find_hole] : []),
+    @ (seek ? [find_hole] : []),
   );
 };
 
@@ -284,7 +284,7 @@ let rec full_auto_helper = (n, bounds: zexp, z: zexp) => {
   if (n == 0) {
     z;
   } else {
-    full_auto_helper(n - 1, z, auto(~next=false, focus_hole(z)));
+    full_auto_helper(n - 1, z, auto(~seek=false, focus_hole(z)));
   };
 };
 let full_auto = z => full_auto_helper(40, z, z);

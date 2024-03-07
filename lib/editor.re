@@ -63,7 +63,6 @@ let edit_action_of_text = (s: string) =>
   | "let" => Some(MakeLet)
   // | "auto" => Some(Auto)
   | _ => None
-  // | _ => None
   };
 
 let rec apply_zname = (a: edit_action, z: zname): zname => {
@@ -96,7 +95,6 @@ let rec apply_ztyp = (a: edit_action, z: ztyp): ztyp => {
   | (Backspace, Cursor(Base(x))) => Cursor(Base(backspace(x)))
   | (Backspace, Cursor(_)) => Cursor(Hole)
   | (MakeArrow, Cursor(t)) => RArrow(t, Cursor(Hole))
-  | (TextAction, Cursor(Hole)) => apply_ztyp(TextAction, Cursor(Base("")))
   | (TextAction, Cursor(Base(x))) =>
     switch (edit_action_of_text(x)) {
     | Some(a') => apply_ztyp(a', Cursor(Hole))
@@ -135,13 +133,13 @@ let rec apply_zexp = (a: edit_action, z: zexp): zexp => {
   // | (MakeFun, Cursor(Hole)) => XFun(Cursor(Hole), Hole, Hole)
   // | (MakeAp, Cursor(Hole)) => LAp(Cursor(Hole), Hole)
   // | (MakeLet, Cursor(Hole)) => XLet(Cursor(Hole), Hole, Hole, Hole)
-  | (TextAction, Cursor(Hole)) => apply_zexp(TextAction, Cursor(Var("")))
-  | (TextAction, Cursor(Var(x))) =>
+  | (TextAction, Cursor(Var(x)))
+  | (TextAction, Cursor(Mark(_, Var(x)))) =>
     switch (edit_action_of_text(x)) {
     | Some(a') => apply_zexp(a', Cursor(Hole))
     | None => apply_zexp(MakeAp, z)
     }
-  | (TextAction, z) => apply_zexp(MakeAp, z)
+  | (TextAction, Cursor(_)) => apply_zexp(MakeAp, z)
   | (GiveExp(e), z) => give_exp(z, e)
   | (FillVar, z) => fill_var(z)
   | (Refine, z) => refine(z)
@@ -179,6 +177,7 @@ let rec apply_zexp = (a: edit_action, z: zexp): zexp => {
   // | _ => z
   // }
   // | (Auto, z) => apply_zexp(Refine, apply_zexp(FillVar, z))
+  | (a, Mark(m, z)) => Mark(m, apply_zexp(a, z))
   | (a, XFun(z, t, e)) => XFun(apply_zname(a, z), t, e)
   | (a, TFun(x, z, e)) => TFun(x, apply_ztyp(a, z), e)
   | (a, EFun(x, t, z)) => EFun(x, t, apply_zexp(a, z))
