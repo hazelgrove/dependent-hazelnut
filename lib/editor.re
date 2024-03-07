@@ -3,6 +3,7 @@ open Terms;
 // open Lang;
 
 open Find_holes;
+open Movement;
 open Tactics;
 
 type state = zexp;
@@ -11,8 +12,8 @@ type edit_action =
   | Delete
   | GoUp
   | GoDown
-  | GoRight
   | GoLeft
+  | GoRight
   | NextHole
   | FocusHole
   | AddString(string)
@@ -60,8 +61,9 @@ let edit_action_of_text = (s: string) =>
   switch (s) {
   | "fun" => Some(MakeFun)
   | "let" => Some(MakeLet)
-  | "" => Some(MakeAp)
+  // | "auto" => Some(Auto)
   | _ => None
+  // | _ => None
   };
 
 let rec apply_zname = (a: edit_action, z: zname): zname => {
@@ -84,17 +86,16 @@ let rec apply_zname = (a: edit_action, z: zname): zname => {
 let rec apply_ztyp = (a: edit_action, z: ztyp): ztyp => {
   switch (a, z) {
   | (Delete, Cursor(_)) => Cursor(Hole)
-  | (GoUp, LArrow(Cursor(t1), t2)) => Cursor(Arrow(t1, t2))
-  | (GoUp, RArrow(t1, Cursor(t2))) => Cursor(Arrow(t1, t2))
-  | (GoDown, Cursor(Arrow(t1, t2))) => LArrow(Cursor(t1), t2)
-  | (GoRight, LArrow(Cursor(t1), t2)) => RArrow(t1, Cursor(t2))
-  | (GoLeft, RArrow(t1, Cursor(t2))) => LArrow(Cursor(t1), t2)
+  | (GoUp, z) => move_ztyp(Up, z)
+  | (GoDown, z) => move_ztyp(Down, z)
+  | (GoLeft, z) => move_ztyp(Left, z)
+  | (GoRight, z) => move_ztyp(Right, z)
   | (AddString(s), Cursor(Hole)) => Cursor(Base(s))
   | (AddString(s), Cursor(Base(x))) => Cursor(Base(x ++ s))
   | (Backspace, Cursor(Base(x))) when String.length(x) == 1 => Cursor(Hole)
   | (Backspace, Cursor(Base(x))) => Cursor(Base(backspace(x)))
   | (Backspace, Cursor(_)) => Cursor(Hole)
-  | (MakeArrow, Cursor(Hole)) => LArrow(Cursor(Hole), Hole)
+  | (MakeArrow, Cursor(t)) => RArrow(t, Cursor(Hole))
   | (TextAction, Cursor(Hole)) => apply_ztyp(TextAction, Cursor(Base("")))
   | (TextAction, Cursor(Base(x))) =>
     switch (edit_action_of_text(x)) {
@@ -119,37 +120,17 @@ let rec apply_zexp = (a: edit_action, z: zexp): zexp => {
     | Some(z') => z'
     | None => z
     }
-  | (GoUp, XFun(Cursor(x), t, e)) => Cursor(Fun(x, t, e))
-  | (GoUp, TFun(x, Cursor(t), e)) => Cursor(Fun(x, t, e))
-  | (GoUp, EFun(x, t, Cursor(e))) => Cursor(Fun(x, t, e))
-  | (GoUp, LAp(Cursor(e1), e2)) => Cursor(Ap(e1, e2))
-  | (GoUp, RAp(e1, Cursor(e2))) => Cursor(Ap(e1, e2))
-  | (GoUp, XLet(Cursor(x), t, e1, e2)) => Cursor(Let(x, t, e1, e2))
-  | (GoUp, TLet(x, Cursor(t), e1, e2)) => Cursor(Let(x, t, e1, e2))
-  | (GoUp, E1Let(x, t, Cursor(e1), e2)) => Cursor(Let(x, t, e1, e2))
-  | (GoUp, E2Let(x, t, e1, Cursor(e2))) => Cursor(Let(x, t, e1, e2))
-  | (GoDown, Cursor(Fun(x, t, e))) => XFun(Cursor(x), t, e)
-  | (GoDown, Cursor(Ap(e1, e2))) => LAp(Cursor(e1), e2)
-  | (GoDown, Cursor(Let(x, t, e1, e2))) => XLet(Cursor(x), t, e1, e2)
-  | (GoRight, XFun(Cursor(x), t, e)) => TFun(x, Cursor(t), e)
-  | (GoRight, TFun(x, Cursor(t), e)) => EFun(x, t, Cursor(e))
-  | (GoRight, LAp(Cursor(e1), e2)) => RAp(e1, Cursor(e2))
-  | (GoRight, XLet(Cursor(x), t, e1, e2)) => TLet(x, Cursor(t), e1, e2)
-  | (GoRight, TLet(x, Cursor(t), e1, e2)) => E1Let(x, t, Cursor(e1), e2)
-  | (GoRight, E1Let(x, t, Cursor(e1), e2)) => E2Let(x, t, e1, Cursor(e2))
-  | (GoLeft, TFun(x, Cursor(t), e)) => XFun(Cursor(x), t, e)
-  | (GoLeft, EFun(x, t, Cursor(e))) => TFun(x, Cursor(t), e)
-  | (GoLeft, RAp(e1, Cursor(e2))) => LAp(Cursor(e1), e2)
-  | (GoLeft, TLet(x, Cursor(t), e1, e2)) => XLet(Cursor(x), t, e1, e2)
-  | (GoLeft, E1Let(x, t, Cursor(e1), e2)) => TLet(x, Cursor(t), e1, e2)
-  | (GoLeft, E2Let(x, t, e1, Cursor(e2))) => E1Let(x, t, Cursor(e1), e2)
+  | (GoUp, z) => move_zexp(Up, z)
+  | (GoDown, z) => move_zexp(Down, z)
+  | (GoLeft, z) => move_zexp(Left, z)
+  | (GoRight, z) => move_zexp(Right, z)
   | (AddString(s), Cursor(Hole)) => Cursor(Var(s))
   | (AddString(s), Cursor(Var(x))) => Cursor(Var(x ++ s))
   | (Backspace, Cursor(Var(x))) when String.length(x) == 1 => Cursor(Hole)
   | (Backspace, Cursor(Var(x))) => Cursor(Var(backspace(x)))
   | (Backspace, Cursor(_)) => Cursor(Hole)
   | (MakeFun, z) => focus_hole(give_exp(z, Fun(Hole, Hole, Hole)))
-  | (MakeAp, z) => focus_hole(give_exp(z, Ap(Hole, Hole)))
+  | (MakeAp, Cursor(e)) => RAp(e, Cursor(Hole))
   | (MakeLet, z) => focus_hole(give_exp(z, Let(Hole, Hole, Hole, Hole)))
   // | (MakeFun, Cursor(Hole)) => XFun(Cursor(Hole), Hole, Hole)
   // | (MakeAp, Cursor(Hole)) => LAp(Cursor(Hole), Hole)
@@ -158,8 +139,9 @@ let rec apply_zexp = (a: edit_action, z: zexp): zexp => {
   | (TextAction, Cursor(Var(x))) =>
     switch (edit_action_of_text(x)) {
     | Some(a') => apply_zexp(a', Cursor(Hole))
-    | None => z
+    | None => apply_zexp(MakeAp, z)
     }
+  | (TextAction, z) => apply_zexp(MakeAp, z)
   | (GiveExp(e), z) => give_exp(z, e)
   | (FillVar, z) => fill_var(z)
   | (Refine, z) => refine(z)

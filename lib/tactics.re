@@ -198,21 +198,6 @@ let rec refinable_position = z =>
   | E2Let(_, _, _, z) => refinable_position(z)
   };
 
-let rec cursor_at_zhole = (z: zexp) =>
-  switch (z) {
-  | Cursor(e) => e == Hole
-  | Mark(_, z) => cursor_at_zhole(z)
-  | XFun(_, _, _)
-  | TFun(_, _, _) => false
-  | EFun(_, _, z)
-  | LAp(z, _)
-  | RAp(_, z) => cursor_at_zhole(z)
-  | XLet(_, _, _, _)
-  | TLet(_, _, _, _) => false
-  | E1Let(_, _, z, _)
-  | E2Let(_, _, _, z) => cursor_at_zhole(z)
-  };
-
 let rec chain_tactics = (z: zexp, ts: list(zexp => zexp)) =>
   switch (ts) {
   | [] => z
@@ -234,14 +219,27 @@ let auto = (z: zexp) => {
   };
   let smart_make_lemma = z => {
     switch (local_goal([], Hole, z)) {
-    | Arrow(t1, t2) when complete_typ(Arrow(t1, t2)) && cursor_at_zhole(z) =>
+    | Arrow(t1, t2)
+        when complete_typ(Arrow(t1, t2)) && exp_at_cursor(z) == Some(Hole) =>
       make_lemma(z)
     | _ => z
     };
   };
+  let find_hole = z =>
+    switch (find_hole_zexp(~loop=true, z)) {
+    | None => z
+    | Some(z') => z'
+    };
   chain_tactics(
-    focus_hole(z),
-    [fill_var, smart_refine, suggest_ap, smart_make_lemma],
+    z,
+    [
+      focus_hole,
+      fill_var,
+      smart_refine,
+      suggest_ap,
+      smart_make_lemma,
+      find_hole,
+    ],
   );
 };
 

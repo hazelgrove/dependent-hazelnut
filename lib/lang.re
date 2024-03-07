@@ -58,6 +58,21 @@ let rec exp_of_zexp = (z: zexp): exp => {
   };
 };
 
+let rec exp_at_cursor = (z: zexp) =>
+  switch (z) {
+  | Cursor(e) => Some(e)
+  | Mark(_, z) => exp_at_cursor(z)
+  | XFun(_, _, _)
+  | TFun(_, _, _) => None
+  | EFun(_, _, z)
+  | LAp(z, _)
+  | RAp(_, z) => exp_at_cursor(z)
+  | XLet(_, _, _, _)
+  | TLet(_, _, _, _) => None
+  | E1Let(_, _, z, _)
+  | E2Let(_, _, _, z) => exp_at_cursor(z)
+  };
+
 let complete_name = (x: name) =>
   switch (x) {
   | Hole => false
