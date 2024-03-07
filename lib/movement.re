@@ -60,7 +60,9 @@ let rec move_zexp = (d, z): zexp =>
   | (Right, XFun(z, t, e)) => TFun(name_of_zname(z), Cursor(t), e)
   | (Right, TFun(x, z, e)) =>
     let z' = move_ztyp(Right, z);
-    z != z' ? TFun(x, z', e) : EFun(x, typ_of_ztyp(z), Cursor(e));
+    z != z'
+      ? TFun(x, z', e)
+      : EFun(x, typ_of_ztyp(z), move_zexp(Down, Cursor(e))); // descend
   | (Right, LAp(z, e2)) =>
     let z' = move_zexp(Right, z);
     z != z' ? LAp(z', e2) : RAp(exp_of_zexp(z), Cursor(e2));
@@ -69,11 +71,13 @@ let rec move_zexp = (d, z): zexp =>
   | (Right, TLet(x, z, e1, e2)) =>
     let z' = move_ztyp(Right, z);
     z != z'
-      ? TLet(x, z', e1, e2) : E1Let(x, typ_of_ztyp(z), Cursor(e1), e2);
+      ? TLet(x, z', e1, e2)
+      : E1Let(x, typ_of_ztyp(z), move_zexp(Down, Cursor(e1)), e2); // descend
   | (Right, E1Let(x, t, z, e2)) =>
     let z' = move_zexp(Right, z);
     z != z'
-      ? E1Let(x, t, z', e2) : E2Let(x, t, exp_of_zexp(z), Cursor(e2));
+      ? E1Let(x, t, z', e2)
+      : E2Let(x, t, exp_of_zexp(z), move_zexp(Down, Cursor(e2))); // descend
   // | (d, XFun(z, t, e)) => XFun(apply_zname(a, z), t, e)
   | (d, TFun(x, z, e)) => TFun(x, move_ztyp(d, z), e)
   | (d, EFun(x, t, z)) => EFun(x, t, move_zexp(d, z))
