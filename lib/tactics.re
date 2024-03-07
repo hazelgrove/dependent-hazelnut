@@ -286,11 +286,12 @@ let rec set_cursor_to_bounds_exp = (bounds, z) =>
   };
 
 let rec full_auto_helper = (n, bounds: zexp, z: zexp) => {
-  let z = set_cursor_to_bounds_exp(bounds, z);
+  // let z = set_cursor_to_bounds_exp(bounds, z);
+  let _ = bounds;
   if (n == 0) {
     z;
   } else {
-    full_auto_helper(n - 1, bounds, auto(focus_hole(z)));
+    full_auto_helper(n - 1, z, auto(z));
   };
 };
 let full_auto = z => full_auto_helper(40, z, z);
