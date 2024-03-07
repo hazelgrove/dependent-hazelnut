@@ -43,7 +43,12 @@ let initial_state: zexp =
         Arrow(Arrow(Base("a"), Base("b")), Arrow(Base("a"), Base("c"))),
       ),
       Hole,
-      Var("thm1"),
+      Let(
+        Text("thm3"),
+        Arrow(Arrow(Arrow(Base("a"), Base("a")), Base("b")), Base("b")),
+        Hole,
+        Hole,
+      ),
     ),
   );
 
@@ -142,9 +147,12 @@ let rec apply_zexp = (a: edit_action, z: zexp): zexp => {
   | (Backspace, Cursor(Var(x))) when String.length(x) == 1 => Cursor(Hole)
   | (Backspace, Cursor(Var(x))) => Cursor(Var(backspace(x)))
   | (Backspace, Cursor(_)) => Cursor(Hole)
-  | (MakeFun, Cursor(Hole)) => XFun(Cursor(Hole), Hole, Hole)
-  | (MakeAp, Cursor(Hole)) => LAp(Cursor(Hole), Hole)
-  | (MakeLet, Cursor(Hole)) => XLet(Cursor(Hole), Hole, Hole, Hole)
+  | (MakeFun, z) => focus_hole(give_exp(z, Fun(Hole, Hole, Hole)))
+  | (MakeAp, z) => focus_hole(give_exp(z, Ap(Hole, Hole)))
+  | (MakeLet, z) => focus_hole(give_exp(z, Let(Hole, Hole, Hole, Hole)))
+  // | (MakeFun, Cursor(Hole)) => XFun(Cursor(Hole), Hole, Hole)
+  // | (MakeAp, Cursor(Hole)) => LAp(Cursor(Hole), Hole)
+  // | (MakeLet, Cursor(Hole)) => XLet(Cursor(Hole), Hole, Hole, Hole)
   | (TextAction, Cursor(Hole)) => apply_zexp(TextAction, Cursor(Var("")))
   | (TextAction, Cursor(Var(x))) =>
     switch (edit_action_of_text(x)) {

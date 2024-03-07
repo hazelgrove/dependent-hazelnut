@@ -48,45 +48,42 @@ let doms_of_marks = (ms: list(mark)): list(Node.t) => {
   List.map(dom_of_entry, ms);
 };
 
-let rec dom_of_exp = (c: context, e: exp): Node.t =>
+let rec dom_of_exp = (c: context, completes: list(string), e: exp): Node.t =>
   switch (e) {
   | Hole => hole
-  | Mark(_, e) => mark([dom_of_exp(c, e)])
+  | Mark(_, e) => mark([dom_of_exp(c, completes, e)])
   | Var(x) => text(x)
   | Fun(x, t, e) =>
-    let c' =
-      switch (x) {
-      | Hole => c
-      | Text(x') => extend_context(x', t, c)
-      };
+    let c' = extend_context_name(x, t, c);
+    let completes' =
+      complete_typ(t) ? extend_list_name(x, completes) : completes;
     block_indent(
       [dom_of_name(x), text(":"), dom_of_typ(t), text("→")],
-      dom_of_exp(c', e),
+      dom_of_exp(c', completes', e),
     );
   | Ap(e1, e2) =>
     oneline([
       text("("),
-      dom_of_exp(c, e1),
+      dom_of_exp(c, completes, e1),
       text(")("),
-      dom_of_exp(c, e2),
+      dom_of_exp(c, completes, e2),
       text(")"),
     ])
   | Let(x, t, e1, e2) =>
-    let c' =
-      switch (x) {
-      | Hole => c
-      | Text(x') => extend_context(x', t, c)
-      };
+    let c' = extend_context_name(x, t, c);
+    let completes' =
+      complete_typ(t) && complete_exp(completes, e)
+        ? extend_list_name(x, completes) : completes;
     sub_block(
       [
-        check_let(c, t, e1) ? Node.text("🟩") : Node.text(""),
+        check_let(c, t, completes, e1) ? Node.text("🟩") : Node.text(""),
         dom_of_name(x),
         text(":"),
         dom_of_typ(t),
         text("←"),
       ],
-      dom_of_exp(c, e1),
-      dom_of_exp(c', e2),
+      dom_of_exp(c, completes, e1),
+      dom_of_exp(c', completes', e2),
     );
   };
 
@@ -128,126 +125,109 @@ let rec dom_of_ztyp = (z: ztyp): Node.t =>
     ])
   };
 
-let rec dom_of_zexp = (c: context, z: zexp): Node.t => {
+let rec dom_of_zexp = (c: context, completes: list(string), z: zexp): Node.t => {
   switch (z) {
   | Cursor(Hole) => cursor_hole
-  | Mark(_, z) => mark([dom_of_zexp(c, z)])
-  | Cursor(e) => cursor([dom_of_exp(c, e)])
+  | Mark(_, z) => mark([dom_of_zexp(c, completes, z)])
+  | Cursor(e) => cursor([dom_of_exp(c, completes, e)])
   | XFun(z, t, e) =>
-    let c' =
-      switch (name_of_zname(z)) {
-      | Hole => c
-      | Text(x') => extend_context(x', t, c)
-      };
+    let c' = extend_context_name(name_of_zname(z), t, c);
+    let completes' =
+      extend_complete_list_fun(name_of_zname(z), t, completes);
     block_indent(
       [dom_of_zname(z), text(":"), dom_of_typ(t), text("→")],
-      dom_of_exp(c', e),
+      dom_of_exp(c', completes', e),
     );
   | TFun(x, z, e) =>
-    let c' =
-      switch (x) {
-      | Hole => c
-      | Text(x') => extend_context(x', typ_of_ztyp(z), c)
-      };
+    let c' = extend_context_name(x, typ_of_ztyp(z), c);
+    let completes' = extend_complete_list_fun(x, typ_of_ztyp(z), completes);
     block_indent(
       [dom_of_name(x), text(":"), dom_of_ztyp(z), text("→")],
-      dom_of_exp(c', e),
+      dom_of_exp(c', completes', e),
     );
   | EFun(x, t, z) =>
-    let c' =
-      switch (x) {
-      | Hole => c
-      | Text(x') => extend_context(x', t, c)
-      };
+    let c' = extend_context_name(x, t, c);
+    let completes' = extend_complete_list_fun(x, t, completes);
     block_indent(
       [dom_of_name(x), text(":"), dom_of_typ(t), text("→")],
-      dom_of_zexp(c', z),
+      dom_of_zexp(c', completes', z),
     );
   | LAp(z, e) =>
     oneline([
       text("("),
-      dom_of_zexp(c, z),
+      dom_of_zexp(c, completes, z),
       text(")("),
-      dom_of_exp(c, e),
+      dom_of_exp(c, completes, e),
       text(")"),
     ])
   | RAp(e, z) =>
     oneline([
       text("("),
-      dom_of_exp(c, e),
+      dom_of_exp(c, completes, e),
       text(")("),
-      dom_of_zexp(c, z),
+      dom_of_zexp(c, completes, z),
       text(")"),
     ])
   | XLet(x, t, e1, e2) =>
-    let c' =
-      switch (name_of_zname(x)) {
-      | Hole => c
-      | Text(x') => extend_context(x', t, c)
-      };
+    let c' = extend_context_name(name_of_zname(x), t, c);
+    let completes' =
+      extend_complete_list_let(name_of_zname(x), t, e1, completes);
     sub_block(
       [
-        check_let(c, t, e1) ? Node.text("🟩") : Node.text(""),
+        check_let(c, t, completes, e1) ? Node.text("🟩") : Node.text(""),
         dom_of_zname(x),
         text(":"),
         dom_of_typ(t),
         text("←"),
       ],
-      dom_of_exp(c, e1),
-      dom_of_exp(c', e2),
+      dom_of_exp(c, completes, e1),
+      dom_of_exp(c', completes', e2),
     );
   | TLet(x, t, e1, e2) =>
-    let c' =
-      switch (x) {
-      | Hole => c
-      | Text(x') => extend_context(x', typ_of_ztyp(t), c)
-      };
+    let c' = extend_context_name(x, typ_of_ztyp(t), c);
+    let completes' =
+      extend_complete_list_let(x, typ_of_ztyp(t), e1, completes);
     sub_block(
       [
-        check_let(c, typ_of_ztyp(t), e1)
+        check_let(c, typ_of_ztyp(t), completes, e1)
           ? Node.text("🟩") : Node.text(""),
         dom_of_name(x),
         text(":"),
         dom_of_ztyp(t),
         text("←"),
       ],
-      dom_of_exp(c, e1),
-      dom_of_exp(c', e2),
+      dom_of_exp(c, completes, e1),
+      dom_of_exp(c', completes', e2),
     );
   | E1Let(x, t, e1, e2) =>
-    let c' =
-      switch (x) {
-      | Hole => c
-      | Text(x') => extend_context(x', t, c)
-      };
+    let c' = extend_context_name(x, t, c);
+    let completes' =
+      extend_complete_list_let(x, t, exp_of_zexp(e1), completes);
     sub_block(
       [
-        check_let(c, t, exp_of_zexp(e1))
+        check_let(c, t, completes, exp_of_zexp(e1))
           ? Node.text("🟩") : Node.text(""),
         dom_of_name(x),
         text(":"),
         dom_of_typ(t),
         text("←"),
       ],
-      dom_of_zexp(c, e1),
-      dom_of_exp(c', e2),
+      dom_of_zexp(c, completes, e1),
+      dom_of_exp(c', completes', e2),
     );
   | E2Let(x, t, e1, e2) =>
-    let c' =
-      switch (x) {
-      | Hole => c
-      | Text(x') => extend_context(x', t, c)
-      };
+    let c' = extend_context_name(x, t, c);
+    let completes' = extend_complete_list_let(x, t, e1, completes);
     sub_block(
       [
-        check_let(c, t, e1) ? Node.text("🟩") : Node.text(""),
+        check_let(c, t, completes, e1) ? Node.text("🟩") : Node.text(""),
         dom_of_name(x),
         text(":"),
         dom_of_typ(t),
         text("←"),
       ],
-      dom_of_exp(c, e1),
-      dom_of_zexp(c', e2),
+      dom_of_exp(c, completes, e1),
+      dom_of_zexp(c', completes', e2),
     );
   };
 };

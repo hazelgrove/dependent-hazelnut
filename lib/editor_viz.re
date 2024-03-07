@@ -21,7 +21,7 @@ let dom_of_state = (z: zexp) => {
   //   };
   let (marked_e, _) = syn([], exp_of_zexp(z));
   let merged_z = mark_merge(z, marked_e);
-  let exp_info = dom_of_zexp([], merged_z);
+  let exp_info = dom_of_zexp([], [], merged_z);
   let context_info = doms_of_context(local_context([], z));
   let goal_info = dom_of_typ(local_goal([], Hole, z));
   let mark_info = doms_of_marks(local_marks(merged_z));

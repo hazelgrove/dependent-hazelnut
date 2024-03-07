@@ -50,22 +50,6 @@ let give_exp = (z: zexp, e: exp) => {
   apply_at_cursor_zexp(z, f);
 };
 
-// Find hole, and fill it with a variable from the context of matching complete type
-let fill_var = (z: zexp) => {
-  // let z = focus_hole(z);
-  let g = local_goal([], Hole, z);
-  if (complete_typ(g)) {
-    let c = local_context([], z);
-    let good_var = ((_: string, t: typ)) => g == t;
-    switch (List.filter(good_var, c)) {
-    | [] => z
-    | [(x, _), ..._] => give_exp(z, Var(x))
-    };
-  } else {
-    z;
-  };
-};
-
 let var_for_typ = (t: typ, c: context) => {
   let rec next_fnum = (acc: int, c: context) =>
     switch (c) {
@@ -87,7 +71,7 @@ let var_for_typ = (t: typ, c: context) => {
   };
 };
 
-// Type directed refinement
+// Type directed refinement - if the goal is an arrow, instantiates the right fun
 let refine = (z: zexp) => {
   switch (local_goal([], Hole, z)) {
   | Arrow(t, _) =>
@@ -111,12 +95,9 @@ let rec typ_endswith = (arg_acc: int, t1, t2) =>
     };
   };
 
-// let rec num_args = t =>
-//   switch (t) {
-//   | Arrow(_, t) => 1 + num_args(t)
-//   | _ => 0
-//   };
-
+// Find an implication in context that can produce the (complete) goal if
+// provided enough arguments, and instantiates it with the right number of args.
+// Prefers those with the fewest arguments.
 let suggest_ap = (z: zexp) => {
   // let z = focus_hole(z);
   let g = local_goal([], Hole, z);
@@ -145,6 +126,21 @@ let suggest_ap = (z: zexp) => {
   };
 };
 
+// Fill hole with a variable from the context of matching complete type
+let fill_var = (z: zexp) => {
+  let g = local_goal([], Hole, z);
+  if (complete_typ(g)) {
+    let c = local_context([], z);
+    let good_var = ((_, t)) => g == t;
+    switch (List.filter(good_var, c)) {
+    | [] => z
+    | [(x, _), ..._] => give_exp(z, Var(x))
+    };
+  } else {
+    z;
+  };
+};
+
 let rec refinable_position = z =>
   switch (z) {
   | LAp(Cursor(_), _)
@@ -163,9 +159,10 @@ let rec refinable_position = z =>
   };
 
 let auto = (z: zexp) => {
+  let z = fill_var(z); // First try solving directly by assumption
   switch (local_goal([], Hole, z)) {
-  | Arrow(_, _) when refinable_position(z) => refine(z)
-  | _ => suggest_ap(focus_hole(z))
+  | Arrow(_, _) when refinable_position(z) => refine(z) // Then refine, if in a good spot to
+  | _ => suggest_ap(focus_hole(z)) // Otherwise, try using an implication in the context
   };
 };
 
