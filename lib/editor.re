@@ -1,6 +1,5 @@
 open Core;
 open Terms;
-// open Lang;
 
 open Find_holes;
 open Movement;
