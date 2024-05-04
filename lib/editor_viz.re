@@ -28,17 +28,17 @@ let dom_of_state = (z: zexp) => {
   let mark_info =
     List.length(mark_info) > 0 ? [Node.br()] @ mark_info @ [Node.hr()] : [];
   Node.div(
-    ~attrs=[Attr.create("class", "code-display")],
+    ~attr=Attr.create("class", "code-display"),
     [
       Node.div(
-        ~attrs=[Attr.create("class", "context-display")],
+        ~attr=Attr.create("class", "context-display"),
         [
           Node.div([
             // type_info, complete_info, Node.hr(),
             exp_info,
           ]),
           Node.div(
-            ~attrs=[Attr.create("class", "context-div")],
+            ~attr=Attr.create("class", "context-div"),
             mark_info
             @ [
               Node.text("Goal"),

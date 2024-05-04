@@ -60,7 +60,7 @@ let view =
   open Vdom;
   let+ model = model;
   Node.div(
-    ~attrs=[
+    ~attr=
       Attr.many_without_merge([
         Attr.on_keydown(_ev => {
           switch (
@@ -84,7 +84,6 @@ let view =
           }
         }),
       ]),
-    ],
     [
       // counter,
       // Node.div(buttons),

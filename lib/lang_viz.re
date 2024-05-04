@@ -43,10 +43,7 @@ let dom_of_mark = (m: mark): Node.t =>
 
 let doms_of_marks = (ms: list(mark)): list(Node.t) => {
   let dom_of_entry = (m: mark): Node.t => {
-    Node.div(
-      ~attrs=[Attr.create("class", "mark-entry")],
-      [dom_of_mark(m)],
-    );
+    Node.div(~attr=Attr.create("class", "mark-entry"), [dom_of_mark(m)]);
   };
   List.map(dom_of_entry, ms);
 };
@@ -90,7 +87,7 @@ let rec dom_of_exp = (c: context, completes: list(string), e: exp): Node.t =>
 let doms_of_context = (c: context): list(Node.t) => {
   let dom_of_entry = ((x: string, t: typ)): Node.t => {
     Node.div(
-      ~attrs=[Attr.create("class", "context-entry")],
+      ~attr=Attr.create("class", "context-entry"),
       [oneline([text(x), text(":"), dom_of_typ(t)])],
     );
   };
