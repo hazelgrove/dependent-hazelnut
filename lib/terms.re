@@ -5,42 +5,35 @@ type name =
 type zname =
   | Cursor(name);
 
-type typ =
-  | Hole
-  | Base(string)
-  | Arrow(typ, typ);
-// | Product(exp, exp)
-
-type ztyp =
-  | Cursor(typ)
-  | LArrow(ztyp, typ)
-  | RArrow(typ, ztyp);
-
 type mark =
   | UnknownVar(string)
-  | FunNotArrow(typ)
-  | Mismatch(typ, typ);
+  | FunNotArrow(term)
+  | Mismatch(term, term)
 
-type exp =
+and term =
   | Hole
-  | Mark(mark, exp)
+  | Typ
+  | Mark(mark, term)
   | Var(string)
-  | Fun(name, typ, exp)
-  | Ap(exp, exp)
-  | Let(name, typ, exp, exp);
-// | Pair(exp, exp)
+  | Base(string)
+  | Arrow(term, term)
+  | Fun(name, term, term)
+  | Ap(term, term)
+  | Let(name, term, term, term);
 
-type zexp =
-  | Cursor(exp)
-  | Mark(mark, zexp)
-  | XFun(zname, typ, exp)
-  | TFun(name, ztyp, exp)
-  | EFun(name, typ, zexp)
-  | LAp(zexp, exp)
-  | RAp(exp, zexp)
-  | XLet(zname, typ, exp, exp)
-  | TLet(name, ztyp, exp, exp)
-  | E1Let(name, typ, zexp, exp)
-  | E2Let(name, typ, exp, zexp);
+type zterm =
+  | Cursor(term)
+  | Mark(mark, zterm)
+  | LArrow(zterm, term)
+  | RArrow(term, zterm)
+  | XFun(zname, term, term)
+  | TFun(name, zterm, term)
+  | EFun(name, term, zterm)
+  | LAp(zterm, term)
+  | RAp(term, zterm)
+  | XLet(zname, term, term, term)
+  | TLet(name, zterm, term, term)
+  | E1Let(name, term, zterm, term)
+  | E2Let(name, term, term, zterm);
 
-type context = list((string, typ));
+type context = list((string, term));
