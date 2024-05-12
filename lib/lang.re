@@ -3,14 +3,14 @@ open Terms;
 
 let valid_name = x => String.trim(x) != "";
 
-let rec extend_context = (x: string, t: typ, c: context): context =>
+let rec extend_context = (x: string, t: term, c: context): context =>
   switch (c) {
   | [] => [(x, t)]
   | [(y, _), ...c] when x == y => extend_context(x, t, c)
   | [(y, t'), ...c] => [(y, t'), ...extend_context(x, t, c)]
   };
 
-let extend_context_name = (x: name, t: typ, c: context): context =>
+let extend_context_name = (x: name, t: term, c: context): context =>
   switch (x) {
   | Hole => c
   | Text(x') => extend_context(x', t, c)
@@ -35,43 +35,38 @@ let name_of_zname = (z: zname): name =>
   | Cursor(x) => x
   };
 
-let rec typ_of_ztyp = (z: ztyp): typ => {
+let rec term_of_zterm = (z: zterm): term => {
   switch (z) {
   | Cursor(t) => t
-  | LArrow(z, t) => Arrow(typ_of_ztyp(z), t)
-  | RArrow(t, z) => Arrow(t, typ_of_ztyp(z))
-  };
-};
-let rec exp_of_zexp = (z: zexp): exp => {
-  switch (z) {
-  | Cursor(e) => e
-  | Mark(m, z) => Mark(m, exp_of_zexp(z))
+  | Mark(m, z) => Mark(m, term_of_zterm(z))
+  | LArrow(z, t) => Arrow(term_of_zterm(z), t)
+  | RArrow(t, z) => Arrow(t, term_of_zterm(z))
   | XFun(z, t, e) => Fun(name_of_zname(z), t, e)
-  | TFun(x, z, e) => Fun(x, typ_of_ztyp(z), e)
-  | EFun(x, t, z) => Fun(x, t, exp_of_zexp(z))
-  | LAp(z, e) => Ap(exp_of_zexp(z), e)
-  | RAp(e, z) => Ap(e, exp_of_zexp(z))
+  | TFun(x, z, e) => Fun(x, term_of_zterm(z), e)
+  | EFun(x, t, z) => Fun(x, t, term_of_zterm(z))
+  | LAp(z, e) => Ap(term_of_zterm(z), e)
+  | RAp(e, z) => Ap(e, term_of_zterm(z))
   | XLet(z, t, e1, e2) => Let(name_of_zname(z), t, e1, e2)
-  | TLet(x, z, e1, e2) => Let(x, typ_of_ztyp(z), e1, e2)
-  | E1Let(x, t, z, e2) => Let(x, t, exp_of_zexp(z), e2)
-  | E2Let(x, t, e1, z) => Let(x, t, e1, exp_of_zexp(z))
+  | TLet(x, z, e1, e2) => Let(x, term_of_zterm(z), e1, e2)
+  | E1Let(x, t, z, e2) => Let(x, t, term_of_zterm(z), e2)
+  | E2Let(x, t, e1, z) => Let(x, t, e1, term_of_zterm(z))
   };
 };
 
-let rec exp_at_cursor = (z: zexp) =>
-  switch (z) {
-  | Cursor(e) => Some(e)
-  | Mark(_, z) => exp_at_cursor(z)
-  | XFun(_, _, _)
-  | TFun(_, _, _) => None
-  | EFun(_, _, z)
-  | LAp(z, _)
-  | RAp(_, z) => exp_at_cursor(z)
-  | XLet(_, _, _, _)
-  | TLet(_, _, _, _) => None
-  | E1Let(_, _, z, _)
-  | E2Let(_, _, _, z) => exp_at_cursor(z)
-  };
+// let rec term_at_cursor = (z: zterm) =>
+//   switch (z) {
+//   | Cursor(e) => Some(e)
+//   | Mark(_, z) => term_at_cursor(z)
+//   | XFun(_, _, _)
+//   | TFun(_, _, _) => None
+//   | EFun(_, _, z)
+//   | LAp(z, _)
+//   | RAp(_, z) => term_at_cursor(z)
+//   | XLet(_, _, _, _)
+//   | TLet(_, _, _, _) => None
+//   | E1Let(_, _, z, _)
+//   | E2Let(_, _, _, z) => term_at_cursor(z)
+//   };
 
 let complete_name = (x: name) =>
   switch (x) {
@@ -79,33 +74,29 @@ let complete_name = (x: name) =>
   | Text(_) => true
   };
 
-let rec complete_typ = (t: typ) =>
-  switch (t) {
-  | Hole => false
-  | Base(_) => true
-  | Arrow(t1, t2) => complete_typ(t1) && complete_typ(t2)
-  };
-
 let extend_complete_list_fun = (x, t, c) =>
-  complete_typ(t) ? extend_list_name(x, c) : c;
+  complete_term(t) ? extend_list_name(x, c) : c;
 let rec extend_complete_list_let = (x, t, e, c) =>
-  complete_typ(t) && complete_exp(c, e) ? extend_list_name(x, c) : c
-and complete_exp = (c: list(string), e: exp) =>
+  complete_term(t) && complete_term(c, e) ? extend_list_name(x, c) : c
+and complete_term = (c: list(string), e: term) =>
   switch (e) {
   | Hole
+  | Typ
   | Mark(_, _) => false
   | Var(x) => List.mem(x, c)
+  | Base(_) => true
+  | Arrow(t1, t2) => complete_term(c, t1) && complete_term(c, t2)
   | Fun(x, t, e) =>
     complete_name(x)
-    && complete_typ(t)
-    && complete_exp(extend_list_name(x, c), e)
-  | Ap(e1, e2) => complete_exp(c, e1) && complete_exp(c, e2)
+    && complete_term(c, t)
+    && complete_term(extend_list_name(x, c), e)
+  | Ap(e1, e2) => complete_term(c, e1) && complete_term(c, e2)
   | Let(x, t, e1, e2) =>
-    complete_exp(extend_complete_list_let(x, t, e1, c), e2)
+    complete_term(extend_complete_list_let(x, t, e1, c), e2)
   };
 
-let rec consist = (t1, t2: typ): bool => {
-  switch (t1: typ, t2: typ) {
+let rec consist = (t1, t2: term): bool => {
+  switch (t1: term, t2: term) {
   | (Hole, _)
   | (_, Hole) => true
   | (Arrow(t1, t2), Arrow(t3, t4)) => consist(t1, t3) && consist(t2, t4)
@@ -114,7 +105,7 @@ let rec consist = (t1, t2: typ): bool => {
   };
 };
 
-let arrow_of_typ = (t: typ): option((typ, typ)) => {
+let arrow_of_term = (t: term): option((term, term)) => {
   switch (t) {
   | Hole => Some((Hole, Hole))
   | Arrow(t1, t2) => Some((t1, t2))
@@ -122,7 +113,7 @@ let arrow_of_typ = (t: typ): option((typ, typ)) => {
   };
 };
 
-let rec syn = (c: context, e: exp): (exp, typ) => {
+let rec syn = (c: context, e: term): (term, term) => {
   switch (e) {
   | Hole => (Hole, Hole)
   | Mark(_, e) =>
@@ -140,9 +131,9 @@ let rec syn = (c: context, e: exp): (exp, typ) => {
   | Ap(e1, e2) =>
     switch (syn(c, e1)) {
     | (e1', t) =>
-      switch (arrow_of_typ(t)) {
+      switch (arrow_of_term(t)) {
       | None => (
-          Ap(Mark(FunNotArrow(t), e1'), ana(c, Hole: typ, e2)),
+          Ap(Mark(FunNotArrow(t), e1'), ana(c, Hole: term, e2)),
           Hole,
         )
       | Some((t1, t2)) => (Ap(e1', ana(c, t1, e2)), t2)
@@ -154,8 +145,8 @@ let rec syn = (c: context, e: exp): (exp, typ) => {
     (Let(x, t, ana(c, t, e1), e2'), t2);
   };
 }
-and ana = (c: context, t: typ, e: exp): exp =>
-  switch (e, arrow_of_typ(t)) {
+and ana = (c: context, t: term, e: term): term =>
+  switch (e, arrow_of_term(t)) {
   | (Fun(x, t1, e), Some((t2, t3))) when consist(t1, t2) =>
     let c' = extend_context_name(x, t1, c);
     Fun(x, t1, ana(c', t3, e));
@@ -168,7 +159,7 @@ and ana = (c: context, t: typ, e: exp): exp =>
     };
   };
 
-let rec mark_merge = (z: zexp, e: exp): zexp =>
+let rec mark_merge = (z: zterm, e: term): zterm =>
   switch (z, e) {
   | (Cursor(_), e') => Cursor(e')
   | (z, Mark(m, e)) => Mark(m, mark_merge(z, e))
@@ -186,7 +177,7 @@ let rec mark_merge = (z: zexp, e: exp): zexp =>
   | _ => failwith("merge mismatch")
   };
 
-let rec local_complete_list = (c: list(string), z: zexp) =>
+let rec local_complete_list = (c: list(string), z: zterm) =>
   switch (z) {
   | Cursor(_) => c
   | Mark(_, z) => local_complete_list(c, z)
@@ -208,10 +199,10 @@ let rec local_complete_list = (c: list(string), z: zexp) =>
 let check_let = (c, t, completes, e1) =>
   switch (syn(c, e1)) {
   | (_, t') =>
-    complete_typ(t) && complete_exp(completes, e1) && consist(t, t')
+    complete_term(t) && complete_term(completes, e1) && consist(t, t')
   };
 
-let rec local_context = (c: context, z: zexp) =>
+let rec local_context = (c: context, z: zterm) =>
   switch (z) {
   | Cursor(_) => c
   | Mark(_, z) => local_context(c, z)
@@ -230,7 +221,7 @@ let rec local_context = (c: context, z: zexp) =>
     local_context(c', z);
   };
 
-let rec local_goal = (c: context, g: typ, z: zexp) =>
+let rec local_goal = (c: context, g: term, z: zterm) =>
   switch (z) {
   | Cursor(_) => g
   | Mark(_, z) => local_goal(c, g, z)
@@ -239,7 +230,7 @@ let rec local_goal = (c: context, g: typ, z: zexp) =>
   | EFun(x, t, z) =>
     let c' = extend_context_name(x, t, c);
     let g' =
-      switch (arrow_of_typ(g)) {
+      switch (arrow_of_term(g)) {
       | Some((_, t')) => t'
       | None => Hole
       };
@@ -248,7 +239,7 @@ let rec local_goal = (c: context, g: typ, z: zexp) =>
     let (_, g') = syn(c, e);
     local_goal(c, Arrow(g', g), z);
   | RAp(e, z) =>
-    let g': typ =
+    let g': term =
       switch (syn(c, e)) {
       | (_, Arrow(g', _)) => g'
       | _ => Hole
@@ -262,7 +253,7 @@ let rec local_goal = (c: context, g: typ, z: zexp) =>
     local_goal(c', g, z);
   };
 
-let rec local_marks = (z: zexp): list(mark) =>
+let rec local_marks = (z: zterm): list(mark) =>
   switch (z) {
   | Cursor(Mark(m, e)) => [m, ...local_marks(Cursor(e))]
   | Cursor(_) => []
