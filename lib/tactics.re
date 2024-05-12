@@ -10,47 +10,43 @@ let apply_at_cursor_zname = (z: zname, f: name => zname): zname =>
   | Cursor(x) => f(x)
   };
 
-let rec apply_at_cursor_ztyp = (z: ztyp, f: typ => ztyp): ztyp =>
-  switch (z) {
-  | Cursor(t) => f(t)
-  | LArrow(z, t) => LArrow(apply_at_cursor_ztyp(z, f), t)
-  | RArrow(t, z) => RArrow(t, apply_at_cursor_ztyp(z, f))
-  };
-
-let rec apply_at_cursor_zexp = (z: zexp, f: exp => zexp) =>
+let rec apply_at_cursor_zterm = (z: zterm, f: term => zterm) =>
   switch (z) {
   | Cursor(e) => f(e)
-  | Mark(m, z) => Mark(m, apply_at_cursor_zexp(z, f))
+  | Mark(m, z) => Mark(m, apply_at_cursor_zterm(z, f))
+  | XArrow(z, t1, t2) => XArrow(z, t1, t2)
+  | LArrow(x, z, t2) => LArrow(x, apply_at_cursor_zterm(z, f), t2)
+  | RArrow(x, t1, z) => RArrow(x, t1, apply_at_cursor_zterm(z, f))
   | XFun(z, t, e) => XFun(z, t, e)
   | TFun(x, z, e) => TFun(x, z, e)
-  | EFun(x, t, z) => EFun(x, t, apply_at_cursor_zexp(z, f))
-  | LAp(z, e) => LAp(apply_at_cursor_zexp(z, f), e)
-  | RAp(e, z) => RAp(e, apply_at_cursor_zexp(z, f))
+  | EFun(x, t, z) => EFun(x, t, apply_at_cursor_zterm(z, f))
+  | LAp(z, e) => LAp(apply_at_cursor_zterm(z, f), e)
+  | RAp(e, z) => RAp(e, apply_at_cursor_zterm(z, f))
   | XLet(z, t, e1, e2) => XLet(z, t, e1, e2)
   | TLet(x, z, e1, e2) => TLet(x, z, e1, e2)
-  | E1Let(x, t, z, e2) => E1Let(x, t, apply_at_cursor_zexp(z, f), e2)
-  | E2Let(x, t, e1, z) => E2Let(x, t, e1, apply_at_cursor_zexp(z, f))
+  | E1Let(x, t, z, e2) => E1Let(x, t, apply_at_cursor_zterm(z, f), e2)
+  | E2Let(x, t, e1, z) => E2Let(x, t, e1, apply_at_cursor_zterm(z, f))
   };
 
-let focus_hole = (z: zexp) => {
+let focus_hole = (z: zterm) => {
   let f = e =>
-    switch (find_hole_exp(e)) {
+    switch (find_hole_term(e)) {
     | Some(z') => z'
     | None => Cursor(e)
     };
-  apply_at_cursor_zexp(z, f);
+  apply_at_cursor_zterm(z, f);
 };
 
-let give_exp = (z: zexp, e: exp) => {
+let give_term = (z: zterm, e: term) => {
   let f = e' =>
     switch (e') {
     | Hole => Cursor(e)
     | e' => Cursor(e')
     };
-  apply_at_cursor_zexp(z, f);
+  apply_at_cursor_zterm(z, f);
 };
 
-let var_for_typ = (t: typ, c: context) => {
+let var_for_term = (t: term, c: context) => {
   let rec next_fnum = (acc: int, c: context) =>
     switch (c) {
     | [] => acc
@@ -71,16 +67,16 @@ let var_for_typ = (t: typ, c: context) => {
   };
 };
 
-// Type directed refinement - if the goal is an arrow, instantiates the right fun
-let refine = (z: zexp) => {
+// type directed refinement - if the goal is an arrow, instantiates the right fun
+let refine = (z: zterm) => {
   switch (local_goal([], Hole, z)) {
-  | Arrow(t, _) =>
-    focus_hole(
-      give_exp(
-        z,
-        Fun(Text(var_for_typ(t, local_context([], z))), t, Hole),
-      ),
-    )
+  | Arrow(x, t, _) =>
+    let var_name =
+      switch (x) {
+      | Hole => var_for_term(t, local_context([], z))
+      | Text(x) => x
+      };
+    focus_hole(give_term(z, Fun(Text(var_name), t, Hole)));
   | _ => z
   };
 };
@@ -102,35 +98,38 @@ let var_for_lemma = (c: context) => {
     };
   "h" ++ string_of_int(next_hnum(0, c) + 1);
 };
-
-let rec insert_lemma = (z: zexp, s: string, g: typ) =>
+// not actually sure what the reasoning is behind this
+let rec insert_lemma = (z: zterm, s: string, g: term) =>
   switch (z) {
   | Cursor(_)
   | LAp(_, _)
   | RAp(_, _)
+  | XArrow(_, _, _)
+  | LArrow(_, _, _)
+  | RArrow(_, _, _)
   | XFun(_, _, _)
   | TFun(_, _, _)
   | XLet(_, _, _, _)
-  | TLet(_, _, _, _) => Cursor(Let(Text(s), g, Hole, exp_of_zexp(z)))
+  | TLet(_, _, _, _) => Cursor(Let(Text(s), g, Hole, term_of_zterm(z)))
   | Mark(m, z) => Mark(m, insert_lemma(z, s, g))
   | EFun(x, t, z) => EFun(x, t, insert_lemma(z, s, g))
   | E1Let(x, t, z, e) => E1Let(x, t, insert_lemma(z, s, g), e)
   | E2Let(x, t, e, z) => E2Let(x, t, e, insert_lemma(z, s, g))
   };
 
-let make_lemma = (z: zexp) => {
+let make_lemma = (z: zterm) => {
   let lemma_name = var_for_lemma(local_context([], z));
-  let z = give_exp(z, Var(lemma_name));
+  let z = give_term(z, Var(lemma_name));
   let z = insert_lemma(z, lemma_name, local_goal([], Hole, z));
   focus_hole(z);
 };
 
-let rec typ_endswith = (arg_acc: int, t1, t2) =>
+let rec term_endswith = (arg_acc: int, t1, t2) =>
   if (t1 == t2) {
     Some(arg_acc);
   } else {
     switch (t1) {
-    | Arrow(_, t1) => typ_endswith(arg_acc + 1, t1, t2)
+    | Arrow(_, _, t1) => term_endswith(arg_acc + 1, t1, t2)
     | _ => None
     };
   };
@@ -138,13 +137,13 @@ let rec typ_endswith = (arg_acc: int, t1, t2) =>
 // Find an implication in context that can produce the (complete) goal if
 // provided enough arguments, and instantiates it with the right number of args.
 // Prefers those with the fewest arguments.
-let suggest_ap = (z: zexp) => {
+let suggest_ap = (z: zterm) => {
   // let z = focus_hole(z);
   let g = local_goal([], Hole, z);
-  if (complete_typ(g)) {
+  if (complete_term([], g)) {
     let c = local_context([], z);
     let f = ((x, t)) => {
-      switch (typ_endswith(0, t, g)) {
+      switch (term_endswith(0, t, g)) {
       | None => None
       | Some(n) => Some((x, t, n))
       };
@@ -159,22 +158,22 @@ let suggest_ap = (z: zexp) => {
       };
     switch (List.sort(preference, c)) {
     | [] => z
-    | [(x, _, n), ..._] => give_exp(z, n_aps(x, n))
+    | [(x, _, n), ..._] => give_term(z, n_aps(x, n))
     };
   } else {
     z;
   };
 };
 
-// Fill hole with a variable from the context of matching complete type
-let fill_var = (z: zexp) => {
+// Fill hole with a variable from the context of matching complete terme
+let fill_var = (z: zterm) => {
   let g = local_goal([], Hole, z);
-  if (complete_typ(g)) {
+  if (complete_term([], g)) {
     let c = local_context([], z);
     let good_var = ((_, t)) => g == t;
     switch (List.filter(good_var, c)) {
     | [] => z
-    | [(x, _), ..._] => give_exp(z, Var(x))
+    | [(x, _), ..._] => give_term(z, Var(x))
     };
   } else {
     z;
@@ -183,6 +182,9 @@ let fill_var = (z: zexp) => {
 
 let rec refinable_position = z =>
   switch (z) {
+  | XArrow(_, _, _)
+  | LArrow(_, _, _)
+  | RArrow(_, _, _)
   | LAp(Cursor(_), _)
   | RAp(_, Cursor(_)) => false
   | Cursor(_)
@@ -198,7 +200,7 @@ let rec refinable_position = z =>
   | E2Let(_, _, _, z) => refinable_position(z)
   };
 
-let rec chain_tactics = (z: zexp, ts: list(zexp => zexp)) =>
+let rec chain_tactics = (z: zterm, ts: list(zterm => zterm)) =>
   switch (ts) {
   | [] => z
   | [t, ...ts] =>
@@ -210,23 +212,25 @@ let rec chain_tactics = (z: zexp, ts: list(zexp => zexp)) =>
     };
   };
 
-let auto = (~seek=true, z: zexp) => {
+let auto = (~seek=true, z: zterm) => {
   let smart_refine = z => {
     switch (local_goal([], Hole, z)) {
-    | Arrow(_, _) when refinable_position(z) => refine(z)
+    | Arrow(_, _, _) when refinable_position(z) => refine(z)
     | _ => z
     };
   };
   let smart_make_lemma = z => {
     switch (local_goal([], Hole, z)) {
-    | Arrow(t1, t2)
-        when complete_typ(Arrow(t1, t2)) && exp_at_cursor(z) == Some(Hole) =>
+    | Arrow(x, t1, t2)
+        when
+          complete_term([], Arrow(x, t1, t2))
+          && term_at_cursor(z) == Some(Hole) =>
       make_lemma(z)
     | _ => z
     };
   };
   let find_hole = z =>
-    switch (find_hole_zexp(~loop=true, z)) {
+    switch (find_hole_zterm(~loop=true, z)) {
     | None => z
     | Some(z') => z'
     };
@@ -241,46 +245,42 @@ let set_cursor_to_bounds_name = (bounds: zname, z: zname): zname =>
   switch (bounds, z) {
   | (Cursor(_), z) => Cursor(name_of_zname(z))
   };
-let rec set_cursor_to_bounds_typ = (bounds: ztyp, z: ztyp): ztyp =>
+let rec set_cursor_to_bounds_term = (bounds, z) =>
   switch (bounds, z) {
-  | (Cursor(_), z) => Cursor(typ_of_ztyp(z))
-  | (LArrow(z, t), LArrow(z', t')) when t == t' =>
-    LArrow(set_cursor_to_bounds_typ(z, z'), t)
-  | (RArrow(t, z), RArrow(t', z')) when t == t' =>
-    RArrow(t, set_cursor_to_bounds_typ(z, z'))
-  | _ => failwith("bounds mismatch")
-  };
-
-let rec set_cursor_to_bounds_exp = (bounds, z) =>
-  switch (bounds, z) {
-  | (Cursor(_), z) => Cursor(exp_of_zexp(z))
+  | (Cursor(_), z) => Cursor(term_of_zterm(z))
+  | (XArrow(z, t1, t2), XArrow(z', t1', t2')) when t1 == t1' && t2 == t2' =>
+    XArrow(set_cursor_to_bounds_name(z, z'), t1, t2)
+  | (LArrow(x, z, t), LArrow(x', z', t')) when x == x' && t == t' =>
+    LArrow(x, set_cursor_to_bounds_term(z, z'), t)
+  | (RArrow(x, t, z), RArrow(x', t', z')) when x == x' && t == t' =>
+    RArrow(x, t, set_cursor_to_bounds_term(z, z'))
   | (XFun(z, t, e), XFun(z', t', e')) when t == t' && e == e' =>
     XFun(set_cursor_to_bounds_name(z, z'), t, e)
   | (TFun(x, z, e), TFun(x', z', e')) when x == x' && e == e' =>
-    TFun(x, set_cursor_to_bounds_typ(z, z'), e)
+    TFun(x, set_cursor_to_bounds_term(z, z'), e)
   | (EFun(x, t, z), EFun(x', t', z')) when x == x' && t == t' =>
-    EFun(x, t, set_cursor_to_bounds_exp(z, z'))
+    EFun(x, t, set_cursor_to_bounds_term(z, z'))
   | (LAp(z, e), LAp(z', e')) when e == e' =>
-    LAp(set_cursor_to_bounds_exp(z, z'), e)
+    LAp(set_cursor_to_bounds_term(z, z'), e)
   | (RAp(e, z), RAp(e', z')) when e == e' =>
-    RAp(e, set_cursor_to_bounds_exp(z, z'))
+    RAp(e, set_cursor_to_bounds_term(z, z'))
   | (XLet(z, t, e1, e2), XLet(z', t', e1', e2'))
       when t == t' && e1 == e1' && e2 == e2' =>
     XLet(set_cursor_to_bounds_name(z, z'), t, e1, e2)
   | (TLet(x, z, e1, e2), TLet(x', z', e1', e2'))
       when x == x' && e1 == e1' && e2 == e2' =>
-    TLet(x, set_cursor_to_bounds_typ(z, z'), e1, e2)
+    TLet(x, set_cursor_to_bounds_term(z, z'), e1, e2)
   | (E1Let(x, t, z, e2), E1Let(x', t', z', e2'))
       when x == x' && t == t' && e2 == e2' =>
-    E1Let(x, t, set_cursor_to_bounds_exp(z, z'), e2)
+    E1Let(x, t, set_cursor_to_bounds_term(z, z'), e2)
   | (E2Let(x, t, e1, z), E2Let(x', t', e1', z'))
       when x == x' && t == t' && e1 == e1' =>
-    E2Let(x, t, e1, set_cursor_to_bounds_exp(z, z'))
+    E2Let(x, t, e1, set_cursor_to_bounds_term(z, z'))
   | _ => failwith("bounds mismatch")
   };
 
-let rec full_auto_helper = (n, bounds: zexp, z: zexp) => {
-  let z = set_cursor_to_bounds_exp(bounds, z);
+let rec full_auto_helper = (n, bounds: zterm, z: zterm) => {
+  let z = set_cursor_to_bounds_term(bounds, z);
   if (n == 0) {
     z;
   } else {

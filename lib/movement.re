@@ -9,11 +9,6 @@ type direction =
 
 let rec move_zterm = (d, z): zterm =>
   switch (d, z) {
-  | _ => z
-  };
-
-let rec move_zterm = (d, z): zterm =>
-  switch (d, z) {
   | (Up, XArrow(Cursor(x), t1, t2))
   | (Up, LArrow(x, Cursor(t1), t2))
   | (Up, RArrow(x, t1, Cursor(t2))) => Cursor(Arrow(x, t1, t2))

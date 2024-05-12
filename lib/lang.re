@@ -54,20 +54,23 @@ let rec term_of_zterm = (z: zterm): term => {
   };
 };
 
-// let rec term_at_cursor = (z: zterm) =>
-//   switch (z) {
-//   | Cursor(e) => Some(e)
-//   | Mark(_, z) => term_at_cursor(z)
-//   | XFun(_, _, _)
-//   | TFun(_, _, _) => None
-//   | EFun(_, _, z)
-//   | LAp(z, _)
-//   | RAp(_, z) => term_at_cursor(z)
-//   | XLet(_, _, _, _)
-//   | TLet(_, _, _, _) => None
-//   | E1Let(_, _, z, _)
-//   | E2Let(_, _, _, z) => term_at_cursor(z)
-//   };
+let rec term_at_cursor = (z: zterm) =>
+  switch (z) {
+  | Cursor(e) => Some(e)
+  | Mark(_, z) => term_at_cursor(z)
+  | XArrow(_, _, _) => None
+  | LArrow(_, z, _)
+  | RArrow(_, _, z) => term_at_cursor(z)
+  | XFun(_, _, _) => None
+  | TFun(_, z, _)
+  | EFun(_, _, z)
+  | LAp(z, _)
+  | RAp(_, z) => term_at_cursor(z)
+  | XLet(_, _, _, _) => None
+  | TLet(_, z, _, _)
+  | E1Let(_, _, z, _)
+  | E2Let(_, _, _, z) => term_at_cursor(z)
+  };
 
 let complete_name = (x: name) =>
   switch (x) {
