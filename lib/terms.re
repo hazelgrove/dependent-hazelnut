@@ -16,7 +16,7 @@ and term =
   | Mark(mark, term)
   | Var(string)
   | Base(string)
-  | Arrow(term, term)
+  | Arrow(name, term, term)
   | Fun(name, term, term)
   | Ap(term, term)
   | Let(name, term, term, term);
@@ -24,8 +24,9 @@ and term =
 type zterm =
   | Cursor(term)
   | Mark(mark, zterm)
-  | LArrow(zterm, term)
-  | RArrow(term, zterm)
+  | XArrow(zname, term, term)
+  | LArrow(name, zterm, term)
+  | RArrow(name, term, zterm)
   | XFun(zname, term, term)
   | TFun(name, zterm, term)
   | EFun(name, term, zterm)
