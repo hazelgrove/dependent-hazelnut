@@ -69,7 +69,7 @@ let var_for_term = (t: term, c: context) => {
 
 // type directed refinement - if the goal is an arrow, instantiates the right fun
 let refine = (z: zterm) => {
-  switch (local_goal([], Hole, z)) {
+  switch (local_goal([], [], Hole, z)) {
   | Arrow(x, t, _) =>
     let var_name =
       switch (x) {
@@ -120,7 +120,7 @@ let rec insert_lemma = (z: zterm, s: string, g: term) =>
 let make_lemma = (z: zterm) => {
   let lemma_name = var_for_lemma(local_context([], z));
   let z = give_term(z, Var(lemma_name));
-  let z = insert_lemma(z, lemma_name, local_goal([], Hole, z));
+  let z = insert_lemma(z, lemma_name, local_goal([], [], Hole, z));
   focus_hole(z);
 };
 
@@ -139,7 +139,7 @@ let rec term_endswith = (arg_acc: int, t1, t2) =>
 // Prefers those with the fewest arguments.
 let suggest_ap = (z: zterm) => {
   // let z = focus_hole(z);
-  let g = local_goal([], Hole, z);
+  let g = local_goal([], [], Hole, z);
   if (complete_term([], g)) {
     let c = local_context([], z);
     let f = ((x, t)) => {
@@ -167,7 +167,7 @@ let suggest_ap = (z: zterm) => {
 
 // Fill hole with a variable from the context of matching complete terme
 let fill_var = (z: zterm) => {
-  let g = local_goal([], Hole, z);
+  let g = local_goal([], [], Hole, z);
   if (no_holes_term(g)) {
     let c = local_context([], z);
     let good_var = ((_, t)) => g == t;
@@ -214,13 +214,13 @@ let rec chain_tactics = (z: zterm, ts: list(zterm => zterm)) =>
 
 let auto = (~seek=true, z: zterm) => {
   let smart_refine = z => {
-    switch (local_goal([], Hole, z)) {
+    switch (local_goal([], [], Hole, z)) {
     | Arrow(_, _, _) when refinable_position(z) => refine(z)
     | _ => z
     };
   };
   let smart_make_lemma = z => {
-    switch (local_goal([], Hole, z)) {
+    switch (local_goal([], [], Hole, z)) {
     | Arrow(x, t1, t2)
         when
           complete_term([], Arrow(x, t1, t2))

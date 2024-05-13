@@ -39,3 +39,5 @@ type zterm =
   | E2Let(name, term, term, zterm);
 
 type context = list((string, term));
+
+type env = list((string, term));

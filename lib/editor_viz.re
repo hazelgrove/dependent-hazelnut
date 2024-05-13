@@ -19,13 +19,16 @@ let dom_of_state = (z: zterm) => {
   //     complete_typ(t) ? Node.text("❓") : Node.text("")
   //   | _ => Node.text("")
   //   };
-  let (marked_e, _) = syn([], term_of_zterm(z));
+  let (marked_e, _) = syn([], [], term_of_zterm(z));
   let merged_z = mark_merge(z, marked_e);
-  let exp_info = dom_of_zterm([], [], merged_z);
+  let exp_info = dom_of_zterm([], [], [], merged_z);
   let local_c = local_context([], z);
-  let context_info = doms_of_context(local_c);
-  let goal_info = dom_of_term(local_c, [], local_goal([], Hole, z));
-  let mark_info = doms_of_marks(local_c, [], local_marks(merged_z));
+  let local_en = local_env([], z);
+  let context_info = doms_of_context(local_c, local_en);
+  let goal_info =
+    dom_of_term(local_c, local_en, [], local_goal([], [], Hole, z));
+  let mark_info =
+    doms_of_marks(local_c, local_en, [], local_marks(merged_z));
   let mark_info =
     List.length(mark_info) > 0 ? [Node.br()] @ mark_info @ [Node.hr()] : [];
   Node.div(

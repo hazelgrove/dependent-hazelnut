@@ -16,6 +16,25 @@ let extend_context_name = (x: name, t: term, c: context): context =>
   | Text(x') => extend_context(x', t, c)
   };
 
+let rec extend_env = (x: string, e: term, en: env): env =>
+  switch (en) {
+  | [] => [(x, e)]
+  | [(y, _), ...c] when x == y => extend_env(x, e, c)
+  | [(y, t'), ...c] => [(y, t'), ...extend_env(x, e, c)]
+  };
+
+let extend_env_name = (x: name, e: term, en: env): env =>
+  switch (x) {
+  | Hole => en
+  | Text(x') => extend_env(x', e, en)
+  };
+
+let maybe_extend_env_name = (x: name, e: term, en: env): env =>
+  switch (e) {
+  | Hole => en
+  | _ => extend_env_name(x, e, en)
+  };
+
 let extend_list_name = (x: name, c: list(string)): list(string) =>
   switch (x) {
   | Hole => c
@@ -132,6 +151,32 @@ let rec sub = (x: string, e1: term, e2: term): term => {
   };
 };
 
+let sub_name = (x: name, e1: term, e2: term): term => {
+  switch (x) {
+  | Hole => e2
+  | Text(x) => sub(x, e1, e2)
+  };
+};
+
+let rec reduce = (en: env, e: term): term => {
+  switch (e) {
+  | Hole
+  | Typ
+  | Base(_)
+  | Arrow(_, _, _)
+  | Fun(_, _, _)
+  | Mark(_, _)
+  | Let(_, _, _, _) => e
+  | Var(x) =>
+    switch (List.assoc_opt(x, en)) {
+    | None => e
+    | Some(e') => reduce(en, e')
+    }
+  | Ap(Fun(x, _, e1), e2) => sub_name(x, e2, e1)
+  | Ap(_, _) => e
+  };
+};
+
 let consist_name = (x1, x2: name): bool => {
   switch (x1: name, x2: name) {
   | (Hole, _)
@@ -140,7 +185,7 @@ let consist_name = (x1, x2: name): bool => {
   };
 };
 
-let rec consist = (t1, t2: term): bool => {
+let rec head_consist = (en: env, t1, t2: term): bool => {
   switch (t1: term, t2: term) {
   | (Hole, _)
   | (_, Hole)
@@ -150,17 +195,21 @@ let rec consist = (t1, t2: term): bool => {
   | (Var(x), Var(y)) => x == y
   | (Base(x), Base(y)) => x == y
   | (Arrow(x, t1, t2), Arrow(y, t3, t4)) =>
-    consist_name(x, y) && consist(t1, t3) && consist(t2, t4)
+    consist_name(x, y) && consist(en, t1, t3) && consist(en, t2, t4)
   | (Fun(x, t1, e1), Fun(y, t2, e2)) =>
-    consist_name(x, y) && consist(t1, t2) && consist(e1, e2)
-  | (Ap(e1, e2), Ap(e3, e4)) => consist(e1, e3) && consist(e2, e4)
+    consist_name(x, y) && consist(en, t1, t2) && consist(en, e1, e2)
+  | (Ap(e1, e2), Ap(e3, e4)) => consist(en, e1, e3) && consist(en, e2, e4)
   | (Let(x, t1, e1, e2), Let(y, t2, e3, e4)) =>
     consist_name(x, y)
-    && consist(t1, t2)
-    && consist(e1, e3)
-    && consist(e2, e4)
+    && consist(en, t1, t2)
+    && consist(en, e1, e3)
+    && consist(en, e2, e4)
   | _ => false
   };
+}
+and consist = (en: env, t1, t2: term): bool => {
+  let (t1', t2') = (reduce(en, t1), reduce(en, t2));
+  head_consist(en, t1', t2');
 };
 
 let typ_of_term = (t: term): bool => {
@@ -180,12 +229,12 @@ let arrow_of_term = (t: term): option((name, term, term)) => {
 };
 
 // Synthetic marking judgement. returns (marked_expression, synthesized_type)
-let rec syn = (c: context, e: term): (term, term) => {
+let rec syn = (c: context, en: env, e: term): (term, term) => {
   switch (e) {
   | Hole => (Hole, Hole)
   | Typ => (Typ, Typ)
   | Mark(_, e) =>
-    let (e', _) = syn(c, e);
+    let (e', _) = syn(c, en, e);
     (e', Hole);
   | Var(x) =>
     switch (lookup(x, c)) {
@@ -194,13 +243,13 @@ let rec syn = (c: context, e: term): (term, term) => {
     }
   | Base(x) => (Base(x), Typ)
   | Arrow(x, t1, t2) =>
-    let (t1', t1t) = syn(c, t1);
+    let (t1', t1t) = syn(c, en, t1);
     let (c', t1'': term) =
       switch (typ_of_term(t1t)) {
       | false => (c, Mark(NotTyp(t1t), t1'))
       | true => (extend_context_name(x, t1', c), t1')
       };
-    let (t2', t2t) = syn(c', t2);
+    let (t2', t2t) = syn(c', en, t2);
     let t2'': term =
       switch (typ_of_term(t2t)) {
       | false => Mark(NotTyp(t2t), t2')
@@ -208,54 +257,51 @@ let rec syn = (c: context, e: term): (term, term) => {
       };
     (Arrow(x, t1'', t2''), Typ);
   | Fun(x, t, e) =>
-    let (t', tt) = syn(c, t);
+    let (t', tt) = syn(c, en, t);
     let (c', t'': term) =
       switch (typ_of_term(tt)) {
       | false => (c, Mark(NotTyp(tt), t'))
       | true => (extend_context_name(x, t', c), t')
       };
-    let (e', et) = syn(c', e);
+    let (e', et) = syn(c', en, e);
     (Fun(x, t', e'), Arrow(x, t'', et));
   | Ap(e1, e2) =>
-    switch (syn(c, e1)) {
+    switch (syn(c, en, e1)) {
     | (e1', t) =>
       switch (arrow_of_term(t)) {
       | None => (
-          Ap(Mark(FunNotArrow(t), e1'), ana(c, Hole: term, e2)),
+          Ap(Mark(FunNotArrow(t), e1'), ana(c, en, Hole: term, e2)),
           Hole,
         )
       | Some((x, t1, t2)) =>
-        let e2' = ana(c, t1, e2);
-        let t =
-          switch (x) {
-          | Hole => t2
-          | Text(x) => sub(x, e2', t2)
-          };
+        let e2' = ana(c, en, t1, e2);
+        let t = sub_name(x, e2', t2);
         (Ap(e1', e2'), t);
       }
     }
   | Let(x, t, e1, e2) =>
-    let (t', tt) = syn(c, t);
+    let (t', tt) = syn(c, en, t);
     let (c', t'': term, ana_t) =
       switch (typ_of_term(tt)) {
       | false => (c, Mark(NotTyp(tt), t'), Hole)
       | true => (extend_context_name(x, t', c), t', t')
       };
-    let (e2', t2) = syn(c', e2);
-    (Let(x, t'', ana(c, ana_t, e1), e2'), t2);
+    let en' = maybe_extend_env_name(x, e1, en);
+    let (e2', t2) = syn(c', en', e2);
+    (Let(x, t'', ana(c, en, ana_t, e1), e2'), t2);
   };
 }
 // Analytic marking judgement. returns marked_expression
-and ana = (c: context, t: term, e: term): term =>
+and ana = (c: context, en: env, t: term, e: term): term =>
   switch (e, arrow_of_term(t)) {
   | (Fun(x, t1, e), Some((y, t2, t3)))
-      when consist_name(x, y) && consist(t1, t2) =>
-    let (t', _) = syn(c, t1);
+      when consist_name(x, y) && consist(en, t1, t2) =>
+    let (t', _) = syn(c, en, t1);
     let c' = extend_context_name(x, t', c);
-    Fun(x, t1, ana(c', t3, e));
+    Fun(x, t1, ana(c', en, t3, e));
   | _ =>
-    let (e', t') = syn(c, e);
-    if (consist(t, t')) {
+    let (e', t') = syn(c, en, e);
+    if (consist(en, t, t')) {
       e';
     } else {
       Mark(Mismatch(t, t'), e');
@@ -312,12 +358,12 @@ let rec local_complete_list = (c: list(string), z: zterm) =>
     local_complete_list(c', z);
   };
 // Whether a let should get a green box next to it
-let check_let = (c, t, completes, e1) =>
-  switch (syn(c, e1)) {
+let check_let = (c, en, t, completes, e1) =>
+  switch (syn(c, en, e1)) {
   | (_, t') =>
     complete_term(completes, t)
     && complete_term(completes, e1)
-    && consist(t, t')
+    && consist(en, t, t')
   };
 // Returns the context at the cursor (appended to the argument c)
 let rec local_context = (c: context, z: zterm) =>
@@ -343,16 +389,35 @@ let rec local_context = (c: context, z: zterm) =>
     let c' = extend_context_name(x, t, c);
     local_context(c', z);
   };
+let rec local_env = (en: env, z: zterm) =>
+  switch (z) {
+  | Cursor(_) => en
+  | Mark(_, z) => local_env(en, z)
+  | XArrow(_, _, _) => en
+  | LArrow(_, z, _)
+  | RArrow(_, _, z) => local_env(en, z)
+  | XFun(_, _, _) => en
+  | TFun(_, z, _)
+  | EFun(_, _, z) => local_env(en, z)
+  | LAp(z, _)
+  | RAp(_, z) => local_env(en, z)
+  | XLet(_, _, _, _) => en
+  | TLet(_, z, _, _)
+  | E1Let(_, _, z, _) => local_env(en, z)
+  | E2Let(x, _, e, z) =>
+    let en' = maybe_extend_env_name(x, e, en);
+    local_env(en', z);
+  };
 // Returns the expected type at the cursor, if the argument's expected type is g
-let rec local_goal = (c: context, g: term, z: zterm) =>
+let rec local_goal = (c: context, en: env, g: term, z: zterm) =>
   switch (z) {
   | Cursor(_) => g
-  | Mark(_, z) => local_goal(c, g, z)
+  | Mark(_, z) => local_goal(c, en, g, z)
   | XArrow(_, _, _) => g
   | LArrow(_, _, _) => Typ
   | RArrow(x, t1, z) =>
     let c' = extend_context_name(x, t1, c);
-    local_goal(c', g, z);
+    local_goal(c', en, g, z);
   | XFun(_, _, _) => g
   | TFun(_, _, _) => Typ
   | EFun(x, t, z) =>
@@ -362,23 +427,24 @@ let rec local_goal = (c: context, g: term, z: zterm) =>
       | Some((y, _, t')) when consist_name(x, y) => t'
       | _ => Hole
       };
-    local_goal(c', g', z);
+    local_goal(c', en, g', z);
   | LAp(z, e) =>
-    let (_, g') = syn(c, e);
-    local_goal(c, Arrow(Hole, g', g), z);
+    let (_, g') = syn(c, en, e);
+    local_goal(c, en, Arrow(Hole, g', g), z);
   | RAp(e, z) =>
     let g': term =
-      switch (syn(c, e)) {
+      switch (syn(c, en, e)) {
       | (_, Arrow(_, g', _)) => g'
       | _ => Hole
       };
-    local_goal(c, g', z);
+    local_goal(c, en, g', z);
   | XLet(_, _, _, _) => g
   | TLet(_, _, _, _) => Typ
-  | E1Let(_, t, z, _) => local_goal(c, t, z)
-  | E2Let(x, t, _, z) =>
+  | E1Let(_, t, z, _) => local_goal(c, en, t, z)
+  | E2Let(x, t, e, z) =>
     let c' = extend_context_name(x, t, c);
-    local_goal(c', g, z);
+    let en' = maybe_extend_env_name(x, e, en);
+    local_goal(c', en', g, z);
   };
 // Returns the marks at the cursor
 let rec local_marks = (z: zterm): list(mark) =>
