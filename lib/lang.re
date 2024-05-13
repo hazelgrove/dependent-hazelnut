@@ -175,6 +175,7 @@ let rec reduce = (en: env, e: term): term => {
   | Ap(e1, e2) =>
     switch (reduce(en, e1)) {
     | Fun(x, _, e1) => reduce(en, sub_name(x, e2, e1))
+    | Hole => Hole
     | _ => Ap(e1, e2)
     }
   };

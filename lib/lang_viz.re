@@ -318,3 +318,55 @@ let rec dom_of_zterm =
     );
   };
 };
+
+let string_of_name = (x: name): string =>
+  switch (x) {
+  | Hole => "Hole"
+  | Text(x) => "Text(\"" ++ x ++ "\")"
+  };
+
+let rec string_of_mark = (m: mark): string =>
+  switch (m) {
+  | UnknownVar(x) => "UnknownVar(\"" ++ x ++ "\")"
+  | FunNotArrow(t) => "FunNotArrow(" ++ string_of_term(t) ++ ")"
+  | Mismatch(t1, t2) =>
+    " Mismatch(" ++ string_of_term(t1) ++ "," ++ string_of_term(t2) ++ ")"
+  | NotTyp(t) => "NotTyp(" ++ string_of_term(t) ++ ")"
+  }
+and string_of_term = (e: term): string =>
+  switch (e) {
+  | Hole => "Hole"
+  | Typ => "Typ"
+  | Mark(m, e) =>
+    "Mark(" ++ string_of_mark(m) ++ "," ++ string_of_term(e) ++ ")"
+  | Var(x) => "Var(\"" ++ x ++ "\")"
+  | Base(x) => "Base(\"" ++ x ++ "\")"
+  | Arrow(x, t1, t2) =>
+    "Arrow("
+    ++ string_of_name(x)
+    ++ ","
+    ++ string_of_term(t1)
+    ++ ","
+    ++ string_of_term(t2)
+    ++ ")"
+  | Fun(x, t, e) =>
+    "Fun("
+    ++ string_of_name(x)
+    ++ ","
+    ++ string_of_term(t)
+    ++ ","
+    ++ string_of_term(e)
+    ++ ")"
+  | Ap(e1, e2) =>
+    "Ap(" ++ string_of_term(e1) ++ "," ++ string_of_term(e2) ++ ")"
+  | Let(x, t, e1, e2) =>
+    "Let("
+    ++ string_of_name(x)
+    ++ ","
+    ++ string_of_term(t)
+    ++ ","
+    ++ string_of_term(e1)
+    ++ ","
+    ++ string_of_term(e2)
+    ++ ")"
+  };

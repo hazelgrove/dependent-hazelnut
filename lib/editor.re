@@ -1,5 +1,7 @@
 open Core;
 open Terms;
+open Lang;
+open Lang_viz;
 
 open Library;
 
@@ -30,7 +32,8 @@ type edit_action =
   | Refine
   | MakeLemma
   | Auto
-  | FullAuto;
+  | FullAuto
+  | Save;
 
 let initial_state: zterm = library;
 
@@ -111,6 +114,14 @@ let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
   | (MakeLemma, z) => make_lemma(z)
   | (Auto, z) => auto(z)
   | (FullAuto, z) => full_auto(z)
+  | (Save, z) =>
+    switch (term_at_cursor(z)) {
+    | None => z
+    | Some(e) =>
+      print_endline(string_of_term(e));
+      z;
+    }
+
   // | (Giveterm(e), Cursor(Hole)) => Cursor(e)
   // | (FillVar, z) =>
   //   let z = apply_zterm(FocusHole, z);

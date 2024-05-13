@@ -46,7 +46,8 @@ let action_of_key =
   | KeyR =>
     control
       ? Some(Edit(Refine)) : Some(Edit(AddString(shift ? "R" : "r")))
-  | KeyS => Some(Edit(AddString(shift ? "S" : "s")))
+  | KeyS =>
+    control ? Some(Edit(Save)) : Some(Edit(AddString(shift ? "S" : "s")))
   | KeyT => Some(Edit(AddString(shift ? "T" : "t")))
   | KeyU => Some(Edit(AddString(shift ? "U" : "u")))
   | KeyV => Some(Edit(AddString(shift ? "V" : "v")))
