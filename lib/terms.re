@@ -5,13 +5,46 @@ type name =
 type zname =
   | Cursor(name);
 
-type mark =
+type pure_term =
+  | Hole
+  | Typ
+  | Var(string)
+  | Base(string)
+  | Arrow(name, pure_term, pure_term)
+  | Fun(name, pure_term, pure_term)
+  | Ap(pure_term, pure_term)
+  | Let(name, pure_term, pure_term, pure_term);
+
+type zterm =
+  | Cursor(pure_term)
+  | XArrow(zname, pure_term, pure_term)
+  | LArrow(name, zterm, pure_term)
+  | RArrow(name, pure_term, zterm)
+  | XFun(zname, pure_term, pure_term)
+  | TFun(name, zterm, pure_term)
+  | EFun(name, pure_term, zterm)
+  | LAp(zterm, pure_term)
+  | RAp(pure_term, zterm)
+  | XLet(zname, pure_term, pure_term, pure_term)
+  | TLet(name, zterm, pure_term, pure_term)
+  | E1Let(name, pure_term, zterm, pure_term)
+  | E2Let(name, pure_term, pure_term, zterm);
+
+type info =
+  | None
+  | Some({
+      goal: term,
+      context,
+      en: env,
+    })
+
+and mark =
   | UnknownVar(string)
   | FunNotArrow(term)
   | Mismatch(term, term)
   | NotTyp(term)
 
-and term =
+and plain_term =
   | Hole
   | Typ
   | Mark(mark, term)
@@ -20,24 +53,11 @@ and term =
   | Arrow(name, term, term)
   | Fun(name, term, term)
   | Ap(term, term)
-  | Let(name, term, term, term);
+  | Let(name, term, term, term)
 
-type zterm =
-  | Cursor(term)
-  | Mark(mark, zterm)
-  | XArrow(zname, term, term)
-  | LArrow(name, zterm, term)
-  | RArrow(name, term, zterm)
-  | XFun(zname, term, term)
-  | TFun(name, zterm, term)
-  | EFun(name, term, zterm)
-  | LAp(zterm, term)
-  | RAp(term, zterm)
-  | XLet(zname, term, term, term)
-  | TLet(name, zterm, term, term)
-  | E1Let(name, term, zterm, term)
-  | E2Let(name, term, term, zterm);
+and term =
+  | Info(info, plain_term)
 
-type context = list((string, term));
+and context = list((string, term))
 
-type env = list((string, term));
+and env = list((string, term));

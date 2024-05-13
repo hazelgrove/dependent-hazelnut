@@ -29,11 +29,11 @@ let extend_env_name = (x: name, e: term, en: env): env =>
   | Text(x') => extend_env(x', e, en)
   };
 
-let maybe_extend_env_name = (x: name, e: term, en: env): env =>
-  switch (e) {
-  | Hole => en
-  | _ => extend_env_name(x, e, en)
-  };
+// let maybe_extend_env_name = (x: name, e: term, en: env): env =>
+//   switch (e) {
+//   | Hole => en
+//   | _ => extend_env_name(x, e, en)
+//   };
 
 let extend_list_name = (x: name, c: list(string)): list(string) =>
   switch (x) {
@@ -41,55 +41,126 @@ let extend_list_name = (x: name, c: list(string)): list(string) =>
   | Text(x') => [x', ...c]
   };
 
-let rec lookup = (x: string, c: context) => {
-  switch (c) {
-  | [] => None
-  | [(y, t), ..._] when x == y => Some(t)
-  | [_, ...c] => lookup(x, c)
-  };
-};
+// let rec lookup = (x: string, c: context) => {
+//   switch (c) {
+//   | [] => None
+//   | [(y, t), ..._] when x == y => Some(t)
+//   | [_, ...c] => lookup(x, c)
+//   };
+// };
 
 let name_of_zname = (z: zname): name =>
   switch (z) {
   | Cursor(x) => x
   };
 
+let rec term_of_pure_term = (e: pure_term): term => {
+  let e' =
+    switch (e) {
+    | Hole => Hole
+    | Typ => Typ
+    | Var(x) => Var(x)
+    | Base(x) => Base(x)
+    | Arrow(x, t1, t2) =>
+      Arrow(x, term_of_pure_term(t1), term_of_pure_term(t2))
+    | Fun(x, t, e) => Fun(x, term_of_pure_term(t), term_of_pure_term(e))
+    | Ap(e1, e2) => Ap(term_of_pure_term(e1), term_of_pure_term(e2))
+    | Let(x, t, e1, e2) =>
+      Let(
+        x,
+        term_of_pure_term(t),
+        term_of_pure_term(e1),
+        term_of_pure_term(e2),
+      )
+    };
+  Info(None, e');
+};
 let rec term_of_zterm = (z: zterm): term => {
   switch (z) {
-  | Cursor(t) => t
-  | Mark(m, z) => Mark(m, term_of_zterm(z))
-  | XArrow(z, t1, t2) => Arrow(name_of_zname(z), t1, t2)
-  | LArrow(x, z, t) => Arrow(x, term_of_zterm(z), t)
-  | RArrow(x, t, z) => Arrow(x, t, term_of_zterm(z))
-  | XFun(z, t, e) => Fun(name_of_zname(z), t, e)
-  | TFun(x, z, e) => Fun(x, term_of_zterm(z), e)
-  | EFun(x, t, z) => Fun(x, t, term_of_zterm(z))
-  | LAp(z, e) => Ap(term_of_zterm(z), e)
-  | RAp(e, z) => Ap(e, term_of_zterm(z))
-  | XLet(z, t, e1, e2) => Let(name_of_zname(z), t, e1, e2)
-  | TLet(x, z, e1, e2) => Let(x, term_of_zterm(z), e1, e2)
-  | E1Let(x, t, z, e2) => Let(x, t, term_of_zterm(z), e2)
-  | E2Let(x, t, e1, z) => Let(x, t, e1, term_of_zterm(z))
+  | Cursor(t) => term_of_pure_term(t)
+  | XArrow(z, t1, t2) =>
+    Info(
+      None,
+      Arrow(
+        name_of_zname(z),
+        term_of_pure_term(t1),
+        term_of_pure_term(t2),
+      ),
+    )
+  | LArrow(x, z, t) =>
+    Info(None, Arrow(x, term_of_zterm(z), term_of_pure_term(t)))
+  | RArrow(x, t, z) =>
+    Info(None, Arrow(x, term_of_pure_term(t), term_of_zterm(z)))
+  | XFun(z, t, e) =>
+    Info(
+      None,
+      Fun(name_of_zname(z), term_of_pure_term(t), term_of_pure_term(e)),
+    )
+  | TFun(x, z, e) =>
+    Info(None, Fun(x, term_of_zterm(z), term_of_pure_term(e)))
+  | EFun(x, t, z) =>
+    Info(None, Fun(x, term_of_pure_term(t), term_of_zterm(z)))
+  | LAp(z, e) => Info(None, Ap(term_of_zterm(z), term_of_pure_term(e)))
+  | RAp(e, z) => Info(None, Ap(term_of_pure_term(e), term_of_zterm(z)))
+  | XLet(z, t, e1, e2) =>
+    Info(
+      None,
+      Let(
+        name_of_zname(z),
+        term_of_pure_term(t),
+        term_of_pure_term(e1),
+        term_of_pure_term(e2),
+      ),
+    )
+  | TLet(x, z, e1, e2) =>
+    Info(
+      None,
+      Let(
+        x,
+        term_of_zterm(z),
+        term_of_pure_term(e1),
+        term_of_pure_term(e2),
+      ),
+    )
+  | E1Let(x, t, z, e2) =>
+    Info(
+      None,
+      Let(
+        x,
+        term_of_pure_term(t),
+        term_of_zterm(z),
+        term_of_pure_term(e2),
+      ),
+    )
+  | E2Let(x, t, e1, z) =>
+    Info(
+      None,
+      Let(
+        x,
+        term_of_pure_term(t),
+        term_of_pure_term(e1),
+        term_of_zterm(z),
+      ),
+    )
   };
 };
 
-let rec term_at_cursor = (z: zterm) =>
-  switch (z) {
-  | Cursor(e) => Some(e)
-  | Mark(_, z) => term_at_cursor(z)
-  | XArrow(_, _, _) => None
-  | LArrow(_, z, _)
-  | RArrow(_, _, z) => term_at_cursor(z)
-  | XFun(_, _, _) => None
-  | TFun(_, z, _)
-  | EFun(_, _, z)
-  | LAp(z, _)
-  | RAp(_, z) => term_at_cursor(z)
-  | XLet(_, _, _, _) => None
-  | TLet(_, z, _, _)
-  | E1Let(_, _, z, _)
-  | E2Let(_, _, _, z) => term_at_cursor(z)
-  };
+// let rec term_at_cursor = (z: zterm) =>
+//   switch (z) {
+//   | Cursor(e) => Some(e)
+//   | XArrow(_, _, _) => None
+//   | LArrow(_, z, _)
+//   | RArrow(_, _, z) => term_at_cursor(z)
+//   | XFun(_, _, _) => None
+//   | TFun(_, z, _)
+//   | EFun(_, _, z)
+//   | LAp(z, _)
+//   | RAp(_, z) => term_at_cursor(z)
+//   | XLet(_, _, _, _) => None
+//   | TLet(_, z, _, _)
+//   | E1Let(_, _, z, _)
+//   | E2Let(_, _, _, z) => term_at_cursor(z)
+//   };
 
 let complete_name = (x: name) =>
   switch (x) {
@@ -97,66 +168,71 @@ let complete_name = (x: name) =>
   | Text(_) => true
   };
 
-let rec extend_complete_list_let = (x, t, e, c) =>
-  complete_term(c, t) && complete_term(c, e) ? extend_list_name(x, c) : c
-and complete_term = (c: list(string), e: term) =>
-  switch (e) {
-  | Hole
-  | Mark(_, _) => false
-  | Var(x) => List.mem(x, c)
-  | Typ
-  | Base(_) => true
-  | Arrow(x, t1, t2) =>
-    complete_term(c, t1) && complete_term(extend_list_name(x, c), t2)
-  | Fun(x, t, e) =>
-    complete_name(x)
-    && complete_term(c, t)
-    && complete_term(extend_list_name(x, c), e)
-  | Ap(e1, e2) => complete_term(c, e1) && complete_term(c, e2)
-  | Let(x, t, e1, e2) =>
-    complete_term(extend_complete_list_let(x, t, e1, c), e2)
-  };
-let extend_complete_list_fun = (x, t, c) =>
-  complete_term(c, t) ? extend_list_name(x, c) : c;
+// let rec extend_complete_list_let = (x, t, e, c) =>
+//   complete_term(t) && complete_term(e) ? extend_list_name(x, c) : c
+// and complete_plain_term = (c: list(string), e: plain_term) =>
+//   switch (e) {
+//   | Hole
+//   | Mark(_, _) => false
+//   | Var(x) => List.mem(x, c)
+//   | Typ
+//   | Base(_) => true
+//   | Arrow(x, t1, t2) =>
+//     complete_term(t1) && complete_term(t2)
+//   | Fun(x, t, e) =>
+//     complete_name(x)
+//     && complete_term(t)
+//     && complete_term(e)
+//   | Ap(e1, e2) => complete_term(e1) && complete_term(e2)
+//   | Let(x, t, e1, e2) =>
+//     complete_term(e2)
+//   }
+// and complete_term = (e: term) =>
+//   switch (e) {
+//   | Info(i, e) => complete_plain_term(e)
+//   };
 
-let rec no_holes_term = (e: term) =>
-  switch (e) {
-  | Hole
-  | Mark(_, _) => false
-  | Var(_)
-  | Typ
-  | Base(_) => true
-  | Arrow(_, t1, t2) => no_holes_term(t1) && no_holes_term(t2)
-  | Fun(x, t, e) =>
-    complete_name(x) && no_holes_term(t) && no_holes_term(e)
-  | Ap(e1, e2) => no_holes_term(e1) && no_holes_term(e2)
-  | Let(_, _, _, e2) => no_holes_term(e2)
-  };
+// let extend_complete_list_fun = (x, t, c) =>
+//   complete_term(t) ? extend_list_name(x, c) : c;
 
-let rec sub = (x: string, e1: term, e2: term): term => {
-  switch (e2) {
-  | Hole
-  | Typ
-  | Base(_) => e2
-  | Var(y) => x == y ? e1 : e2
-  | Mark(m, e) => Mark(m, sub(x, e1, e))
-  | Ap(e3, e4) => Ap(sub(x, e1, e3), sub(x, e1, e4))
-  | Arrow(y, t1, t2) =>
-    y == Text(x) ? e2 : Arrow(y, sub(x, e1, t1), sub(x, e1, t2))
-  | Fun(y, t, e) =>
-    y == Text(x) ? e2 : Fun(y, sub(x, e1, t), sub(x, e1, e))
-  | Let(y, t, e3, e4) =>
-    y == Text(x)
-      ? e2 : Let(y, sub(x, e1, t), sub(x, e1, e3), sub(x, e1, e4))
-  };
-};
+// let rec no_holes_term = (e: term) =>
+//   switch (e) {
+//   | Hole
+//   | Mark(_, _) => false
+//   | Var(_)
+//   | Typ
+//   | Base(_) => true
+//   | Arrow(_, t1, t2) => no_holes_term(t1) && no_holes_term(t2)
+//   | Fun(x, t, e) =>
+//     complete_name(x) && no_holes_term(t) && no_holes_term(e)
+//   | Ap(e1, e2) => no_holes_term(e1) && no_holes_term(e2)
+//   | Let(_, _, _, e2) => no_holes_term(e2)
+//   };
 
-let sub_name = (x: name, e1: term, e2: term): term => {
-  switch (x) {
-  | Hole => e2
-  | Text(x) => sub(x, e1, e2)
-  };
-};
+// let rec sub = (x: string, e1: term, e2: term): term => {
+//   switch (e2) {
+//   | Hole
+//   | Typ
+//   | Base(_) => e2
+//   | Var(y) => x == y ? e1 : e2
+//   | Mark(m, e) => Mark(m, sub(x, e1, e))
+//   | Ap(e3, e4) => Ap(sub(x, e1, e3), sub(x, e1, e4))
+//   | Arrow(y, t1, t2) =>
+//     y == Text(x) ? e2 : Arrow(y, sub(x, e1, t1), sub(x, e1, t2))
+//   | Fun(y, t, e) =>
+//     y == Text(x) ? e2 : Fun(y, sub(x, e1, t), sub(x, e1, e))
+//   | Let(y, t, e3, e4) =>
+//     y == Text(x)
+//       ? e2 : Let(y, sub(x, e1, t), sub(x, e1, e3), sub(x, e1, e4))
+//   };
+// };
+
+// let sub_name = (x: name, e1: term, e2: term): term => {
+//   switch (x) {
+//   | Hole => e2
+//   | Text(x) => sub(x, e1, e2)
+//   };
+// };
 
 let rec reduce = (en: env, e: term): term => {
   switch (e) {
