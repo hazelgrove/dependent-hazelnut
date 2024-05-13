@@ -172,8 +172,11 @@ let rec reduce = (en: env, e: term): term => {
     | None => e
     | Some(e') => reduce(en, e')
     }
-  | Ap(Fun(x, _, e1), e2) => sub_name(x, e2, e1)
-  | Ap(_, _) => e
+  | Ap(e1, e2) =>
+    switch (reduce(en, e1)) {
+    | Fun(x, _, e1) => reduce(en, sub_name(x, e2, e1))
+    | _ => Ap(e1, e2)
+    }
   };
 };
 
@@ -409,7 +412,8 @@ let rec local_env = (en: env, z: zterm) =>
     local_env(en', z);
   };
 // Returns the expected type at the cursor, if the argument's expected type is g
-let rec local_goal = (c: context, en: env, g: term, z: zterm) =>
+// Keeps the goal reduced
+let rec local_goal = (c: context, en: env, g: term, z: zterm) => {
   switch (z) {
   | Cursor(_) => g
   | Mark(_, z) => local_goal(c, en, g, z)
@@ -424,17 +428,18 @@ let rec local_goal = (c: context, en: env, g: term, z: zterm) =>
     let c' = extend_context_name(x, t, c);
     let g' =
       switch (arrow_of_term(g)) {
-      | Some((y, _, t')) when consist_name(x, y) => t'
+      | Some((y, _, t')) when consist_name(x, y) => reduce(en, t')
       | _ => Hole
       };
     local_goal(c', en, g', z);
   | LAp(z, e) =>
     let (_, g') = syn(c, en, e);
+    let g' = reduce(en, g');
     local_goal(c, en, Arrow(Hole, g', g), z);
   | RAp(e, z) =>
     let g': term =
       switch (syn(c, en, e)) {
-      | (_, Arrow(_, g', _)) => g'
+      | (_, Arrow(_, g', _)) => reduce(en, g')
       | _ => Hole
       };
     local_goal(c, en, g', z);
@@ -446,6 +451,7 @@ let rec local_goal = (c: context, en: env, g: term, z: zterm) =>
     let en' = maybe_extend_env_name(x, e, en);
     local_goal(c', en', g, z);
   };
+};
 // Returns the marks at the cursor
 let rec local_marks = (z: zterm): list(mark) =>
   switch (z) {
