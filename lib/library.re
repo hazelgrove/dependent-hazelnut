@@ -344,7 +344,196 @@ let library =
                           ),
                         ),
                       ),
-                      Hole,
+                      Let(
+                        Text("eq"),
+                        Arrow(
+                          Text("A"),
+                          Typ,
+                          Arrow(
+                            Text("a"),
+                            Var("A"),
+                            Arrow(Text("b"), Var("A"), Typ),
+                          ),
+                        ),
+                        Hole,
+                        Let(
+                          Text("refl"),
+                          Arrow(
+                            Text("A"),
+                            Typ,
+                            Arrow(
+                              Text("a"),
+                              Var("A"),
+                              Ap(
+                                Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                                Var("a"),
+                              ),
+                            ),
+                          ),
+                          Hole,
+                          Let(
+                            Text("J"),
+                            Arrow(
+                              Text("A"),
+                              Typ,
+                              Arrow(
+                                Text("P"),
+                                Arrow(
+                                  Text("a"),
+                                  Var("A"),
+                                  Arrow(
+                                    Text("b"),
+                                    Var("A"),
+                                    Arrow(
+                                      Text("e"),
+                                      Ap(
+                                        Ap(
+                                          Ap(Var("eq"), Var("A")),
+                                          Var("a"),
+                                        ),
+                                        Var("b"),
+                                      ),
+                                      Typ,
+                                    ),
+                                  ),
+                                ),
+                                Arrow(
+                                  Text("p"),
+                                  Arrow(
+                                    Text("a"),
+                                    Var("A"),
+                                    Ap(
+                                      Ap(
+                                        Ap(Var("P"), Var("a")),
+                                        Var("a"),
+                                      ),
+                                      Ap(
+                                        Ap(Var("refl"), Var("A")),
+                                        Var("a"),
+                                      ),
+                                    ),
+                                  ),
+                                  Arrow(
+                                    Text("a"),
+                                    Var("A"),
+                                    Arrow(
+                                      Text("b"),
+                                      Var("A"),
+                                      Arrow(
+                                        Text("e"),
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("eq"), Var("A")),
+                                            Var("a"),
+                                          ),
+                                          Var("b"),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("P"), Var("a")),
+                                            Var("b"),
+                                          ),
+                                          Var("e"),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Hole,
+                            Let(
+                              Text("J-eq"),
+                              Hole,
+                              Fun(
+                                Text("A"),
+                                Typ,
+                                Fun(
+                                  Text("P"),
+                                  Arrow(
+                                    Text("a"),
+                                    Var("A"),
+                                    Arrow(
+                                      Text("b"),
+                                      Var("A"),
+                                      Arrow(
+                                        Text("e"),
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("eq"), Var("A")),
+                                            Var("a"),
+                                          ),
+                                          Var("b"),
+                                        ),
+                                        Typ,
+                                      ),
+                                    ),
+                                  ),
+                                  Fun(
+                                    Text("p"),
+                                    Arrow(
+                                      Text("a"),
+                                      Var("A"),
+                                      Ap(
+                                        Ap(
+                                          Ap(Var("P"), Var("a")),
+                                          Var("a"),
+                                        ),
+                                        Ap(
+                                          Ap(Var("refl"), Var("A")),
+                                          Var("a"),
+                                        ),
+                                      ),
+                                    ),
+                                    Fun(
+                                      Text("a"),
+                                      Var("A"),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Var("eq"),
+                                            Ap(
+                                              Ap(
+                                                Ap(Var("P"), Var("a")),
+                                                Var("a"),
+                                              ),
+                                              Ap(
+                                                Ap(Var("refl"), Var("A")),
+                                                Var("a"),
+                                              ),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(Var("J"), Var("A")),
+                                                    Var("P"),
+                                                  ),
+                                                  Var("p"),
+                                                ),
+                                                Var("a"),
+                                              ),
+                                              Var("a"),
+                                            ),
+                                            Ap(
+                                              Ap(Var("refl"), Var("A")),
+                                              Var("a"),
+                                            ),
+                                          ),
+                                        ),
+                                        Ap(Var("p"), Var("a")),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Hole,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),

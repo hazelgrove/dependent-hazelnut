@@ -4,10 +4,102 @@ open Terms;
 open Lang;
 open Web;
 
+type cursor_term =
+  | Hole
+  | Typ
+  | Cursor(cursor_term)
+  | Mark(mark, cursor_term)
+  | Var(string)
+  | Base(string)
+  | Arrow(name, cursor_term, cursor_term)
+  | Fun(name, cursor_term, cursor_term)
+  | Ap(cursor_term, cursor_term)
+  | Let(name, cursor_term, cursor_term, cursor_term);
+
+let rec cursor_term_of_term = (e: term): cursor_term =>
+  switch (e) {
+  | Hole => Hole
+  | Typ => Typ
+  | Mark(mark, term) => Mark(mark, cursor_term_of_term(term))
+  | Var(string) => Var(string)
+  | Base(string) => Base(string)
+  | Arrow(name, term1, term2) =>
+    Arrow(name, cursor_term_of_term(term1), cursor_term_of_term(term2))
+  | Fun(name, term1, term2) =>
+    Fun(name, cursor_term_of_term(term1), cursor_term_of_term(term2))
+  | Ap(term1, term2) =>
+    Ap(cursor_term_of_term(term1), cursor_term_of_term(term2))
+  | Let(name, term1, term2, term3) =>
+    Let(
+      name,
+      cursor_term_of_term(term1),
+      cursor_term_of_term(term2),
+      cursor_term_of_term(term3),
+    )
+  };
+let rec cursor_term_of_zterm = (z: zterm): cursor_term =>
+  switch (z) {
+  | Cursor(e) => Cursor(cursor_term_of_term(e))
+  | Mark(mark, z) => Mark(mark, cursor_term_of_zterm(z))
+  | XArrow(zname, term, term2) =>
+    Arrow(
+      name_of_zname(zname),
+      cursor_term_of_term(term),
+      cursor_term_of_term(term2),
+    )
+  | LArrow(name, zterm, term) =>
+    Arrow(name, cursor_term_of_zterm(zterm), cursor_term_of_term(term))
+  | RArrow(name, term, zterm) =>
+    Arrow(name, cursor_term_of_term(term), cursor_term_of_zterm(zterm))
+  | XFun(zname, term, term2) =>
+    Fun(
+      name_of_zname(zname),
+      cursor_term_of_term(term),
+      cursor_term_of_term(term2),
+    )
+  | TFun(name, zterm, term) =>
+    Fun(name, cursor_term_of_zterm(zterm), cursor_term_of_term(term))
+  | EFun(name, term, zterm) =>
+    Fun(name, cursor_term_of_term(term), cursor_term_of_zterm(zterm))
+  | LAp(zterm, term) =>
+    Ap(cursor_term_of_zterm(zterm), cursor_term_of_term(term))
+  | RAp(term, zterm) =>
+    Ap(cursor_term_of_term(term), cursor_term_of_zterm(zterm))
+  | XLet(zname, term, term2, term3) =>
+    Let(
+      name_of_zname(zname),
+      cursor_term_of_term(term),
+      cursor_term_of_term(term2),
+      cursor_term_of_term(term3),
+    )
+  | TLet(name, zterm, term, term2) =>
+    Let(
+      name,
+      cursor_term_of_zterm(zterm),
+      cursor_term_of_term(term),
+      cursor_term_of_term(term2),
+    )
+  | E1Let(name, term, zterm, term2) =>
+    Let(
+      name,
+      cursor_term_of_term(term),
+      cursor_term_of_zterm(zterm),
+      cursor_term_of_term(term2),
+    )
+  | E2Let(name, term, term2, zterm) =>
+    Let(
+      name,
+      cursor_term_of_term(term),
+      cursor_term_of_term(term2),
+      cursor_term_of_zterm(zterm),
+    )
+  };
+
 let string_aliases = [
   ("exists", "∃"),
   ("exists-con", "∃-con"),
   ("exists-rec", "∃-rec"),
+  ("eq", "="),
 ];
 
 let text_of_text = (x: string) =>
@@ -78,6 +170,24 @@ let rec dom_of_term =
       dom_of_term(c, en, completes, t1),
       text("."),
       dom_of_term(c, en, completes, t2),
+      text(")"),
+    ])
+  | Ap(Ap(Ap(Var("eq"), _), t2), t3) =>
+    oneline([
+      text("("),
+      dom_of_term(c, en, completes, t2),
+      dom_of_term(c, en, completes, Var("eq")),
+      // text("["),
+      // dom_of_term(c, en, completes, t1),
+      // text("]"),
+      dom_of_term(c, en, completes, t3),
+      text(")"),
+    ])
+  | Ap(Ap(Var("refl"), _), e) =>
+    oneline([
+      dom_of_term(c, en, completes, Var("refl")),
+      text("("),
+      dom_of_term(c, en, completes, e),
       text(")"),
     ])
   | Ap(e1, e2) =>
