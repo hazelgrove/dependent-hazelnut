@@ -9,6 +9,7 @@ type mark =
   | UnknownVar(string)
   | FunNotArrow(term)
   | Mismatch(term, term)
+  | NotTyp(term)
 
 and term =
   | Hole

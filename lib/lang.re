@@ -83,9 +83,9 @@ let rec extend_complete_list_let = (x, t, e, c) =>
 and complete_term = (c: list(string), e: term) =>
   switch (e) {
   | Hole
-  | Typ
   | Mark(_, _) => false
   | Var(x) => List.mem(x, c)
+  | Typ
   | Base(_) => true
   | Arrow(x, t1, t2) =>
     complete_term(c, t1) && complete_term(extend_list_name(x, c), t2)
@@ -99,6 +99,20 @@ and complete_term = (c: list(string), e: term) =>
   };
 let extend_complete_list_fun = (x, t, c) =>
   complete_term(c, t) ? extend_list_name(x, c) : c;
+
+let rec no_holes_term = (e: term) =>
+  switch (e) {
+  | Hole
+  | Mark(_, _) => false
+  | Var(_)
+  | Typ
+  | Base(_) => true
+  | Arrow(_, t1, t2) => no_holes_term(t1) && no_holes_term(t2)
+  | Fun(x, t, e) =>
+    complete_name(x) && no_holes_term(t) && no_holes_term(e)
+  | Ap(e1, e2) => no_holes_term(e1) && no_holes_term(e2)
+  | Let(_, _, _, e2) => no_holes_term(e2)
+  };
 
 let rec sub = (x: string, e1: term, e2: term): term => {
   switch (e2) {
@@ -118,6 +132,14 @@ let rec sub = (x: string, e1: term, e2: term): term => {
   };
 };
 
+let consist_name = (x1, x2: name): bool => {
+  switch (x1: name, x2: name) {
+  | (Hole, _)
+  | (_, Hole) => true
+  | (Text(x1), Text(x2)) => x1 == x2
+  };
+};
+
 let rec consist = (t1, t2: term): bool => {
   switch (t1: term, t2: term) {
   | (Hole, _)
@@ -128,12 +150,23 @@ let rec consist = (t1, t2: term): bool => {
   | (Var(x), Var(y)) => x == y
   | (Base(x), Base(y)) => x == y
   | (Arrow(x, t1, t2), Arrow(y, t3, t4)) =>
-    x == y && consist(t1, t3) && consist(t2, t4)
+    consist_name(x, y) && consist(t1, t3) && consist(t2, t4)
   | (Fun(x, t1, e1), Fun(y, t2, e2)) =>
-    x == y && consist(t1, t2) && consist(e1, e2)
+    consist_name(x, y) && consist(t1, t2) && consist(e1, e2)
   | (Ap(e1, e2), Ap(e3, e4)) => consist(e1, e3) && consist(e2, e4)
   | (Let(x, t1, e1, e2), Let(y, t2, e3, e4)) =>
-    x == y && consist(t1, t2) && consist(e1, e3) && consist(e2, e4)
+    consist_name(x, y)
+    && consist(t1, t2)
+    && consist(e1, e3)
+    && consist(e2, e4)
+  | _ => false
+  };
+};
+
+let typ_of_term = (t: term): bool => {
+  switch (t) {
+  | Hole
+  | Typ => true
   | _ => false
   };
 };
@@ -160,16 +193,29 @@ let rec syn = (c: context, e: term): (term, term) => {
     | Some(t) => (Var(x), t)
     }
   | Base(x) => (Base(x), Typ)
-  | Arrow(x, t, e) =>
-    let (t', _) = syn(c, t);
-    let c' = extend_context_name(x, t', c);
-    let (e', _) = syn(c', e);
-    (Arrow(x, t', e'), Typ);
+  | Arrow(x, t1, t2) =>
+    let (t1', t1t) = syn(c, t1);
+    let (c', t1'': term) =
+      switch (typ_of_term(t1t)) {
+      | false => (c, Mark(NotTyp(t1t), t1'))
+      | true => (extend_context_name(x, t1', c), t1')
+      };
+    let (t2', t2t) = syn(c', t2);
+    let t2'': term =
+      switch (typ_of_term(t2t)) {
+      | false => Mark(NotTyp(t2t), t2')
+      | true => t2'
+      };
+    (Arrow(x, t1'', t2''), Typ);
   | Fun(x, t, e) =>
-    let (t', _) = syn(c, t);
-    let c' = extend_context_name(x, t', c);
+    let (t', tt) = syn(c, t);
+    let (c', t'': term) =
+      switch (typ_of_term(tt)) {
+      | false => (c, Mark(NotTyp(tt), t'))
+      | true => (extend_context_name(x, t', c), t')
+      };
     let (e', et) = syn(c', e);
-    (Fun(x, t', e'), Arrow(x, t', et));
+    (Fun(x, t', e'), Arrow(x, t'', et));
   | Ap(e1, e2) =>
     switch (syn(c, e1)) {
     | (e1', t) =>
@@ -189,16 +235,21 @@ let rec syn = (c: context, e: term): (term, term) => {
       }
     }
   | Let(x, t, e1, e2) =>
-    let (t', _) = syn(c, t);
-    let c' = extend_context_name(x, t', c);
+    let (t', tt) = syn(c, t);
+    let (c', t'': term, ana_t) =
+      switch (typ_of_term(tt)) {
+      | false => (c, Mark(NotTyp(tt), t'), Hole)
+      | true => (extend_context_name(x, t', c), t', t')
+      };
     let (e2', t2) = syn(c', e2);
-    (Let(x, t', ana(c, t', e1), e2'), t2);
+    (Let(x, t'', ana(c, ana_t, e1), e2'), t2);
   };
 }
 // Analytic marking judgement. returns marked_expression
 and ana = (c: context, t: term, e: term): term =>
   switch (e, arrow_of_term(t)) {
-  | (Fun(x, t1, e), Some((y, t2, t3))) when x == y && consist(t1, t2) =>
+  | (Fun(x, t1, e), Some((y, t2, t3)))
+      when consist_name(x, y) && consist(t1, t2) =>
     let (t', _) = syn(c, t1);
     let c' = extend_context_name(x, t', c);
     Fun(x, t1, ana(c', t3, e));
@@ -308,7 +359,7 @@ let rec local_goal = (c: context, g: term, z: zterm) =>
     let c' = extend_context_name(x, t, c);
     let g' =
       switch (arrow_of_term(g)) {
-      | Some((y, _, t')) when x == y => t'
+      | Some((y, _, t')) when consist_name(x, y) => t'
       | _ => Hole
       };
     local_goal(c', g', z);

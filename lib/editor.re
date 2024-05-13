@@ -1,6 +1,8 @@
 open Core;
 open Terms;
 
+open Library;
+
 open Find_holes;
 open Movement;
 open Tactics;
@@ -17,6 +19,7 @@ type edit_action =
   | FocusHole
   | AddString(string)
   | Backspace
+  | MakeTyp
   | MakeFun
   | MakeAp
   | MakeLet
@@ -29,39 +32,7 @@ type edit_action =
   | Auto
   | FullAuto;
 
-let initial_state: zterm =
-  E1Let(
-    Text("thm1"),
-    Arrow(
-      Hole,
-      Arrow(Hole, Base("a"), Arrow(Hole, Base("b"), Base("c"))),
-      Arrow(Hole, Base("b"), Arrow(Hole, Base("a"), Base("c"))),
-    ),
-    Cursor(Hole),
-    Let(
-      Text("thm2"),
-      Arrow(
-        Hole,
-        Arrow(Hole, Base("a"), Arrow(Hole, Base("b"), Base("c"))),
-        Arrow(
-          Hole,
-          Arrow(Hole, Base("a"), Base("b")),
-          Arrow(Hole, Base("a"), Base("c")),
-        ),
-      ),
-      Hole,
-      Let(
-        Text("thm3"),
-        Arrow(
-          Hole,
-          Arrow(Hole, Arrow(Hole, Base("a"), Base("a")), Base("b")),
-          Base("b"),
-        ),
-        Hole,
-        Hole,
-      ),
-    ),
-  );
+let initial_state: zterm = library;
 
 let backspace = (s: string) =>
   String.sub(s, ~pos=0, ~len=String.length(s) - 1);
@@ -70,6 +41,7 @@ let edit_action_of_text = (s: string) =>
   switch (s) {
   | "fun" => Some(MakeFun)
   | "let" => Some(MakeLet)
+  | "typ" => Some(MakeTyp)
   // | "auto" => Some(Auto)
   | _ => None
   };
@@ -116,6 +88,7 @@ let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
   | (Backspace, Cursor(Base(x))) when String.length(x) == 1 => Cursor(Hole)
   | (Backspace, Cursor(Base(x))) => Cursor(Base(backspace(x)))
   | (Backspace, Cursor(_)) => Cursor(Hole)
+  | (MakeTyp, Cursor(_)) => Cursor(Typ)
   | (MakeArrow, Cursor(t)) => RArrow(Hole, t, Cursor(Hole))
   | (MakeFun, z) => focus_hole(give_term(z, Fun(Hole, Hole, Hole)))
   | (MakeAp, Cursor(e)) => RAp(e, Cursor(Hole))

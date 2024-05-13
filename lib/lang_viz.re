@@ -4,19 +4,31 @@ open Terms;
 open Lang;
 open Web;
 
+let string_aliases = [
+  ("exists", "∃"),
+  ("exists-con", "∃-con"),
+  ("exists-rec", "∃-rec"),
+];
+
+let text_of_text = (x: string) =>
+  switch (List.assoc_opt(x, string_aliases)) {
+  | Some(y) => y
+  | None => x
+  };
+
 let dom_of_name = (x: name): Node.t =>
   switch (x) {
   | Hole => hole
-  | Text(x) => text(x)
+  | Text(x) => text(text_of_text(x))
   };
 
 let rec dom_of_term = (c: context, completes: list(string), e: term): Node.t =>
   switch (e) {
   | Hole => hole
-  | Typ => text("[]")
+  | Typ => text("◻")
   | Mark(_, e) => mark([dom_of_term(c, completes, e)])
   | Var(x)
-  | Base(x) => text(x)
+  | Base(x) => text(text_of_text(x))
   | Arrow(x, t1, t2) =>
     oneline([
       text("("),
@@ -39,6 +51,26 @@ let rec dom_of_term = (c: context, completes: list(string), e: term): Node.t =>
       ],
       dom_of_term(c', completes', e),
     );
+  | Ap(Ap(Var("exists"), t1), Fun(Text(x), t2, t3)) when t1 == t2 =>
+    oneline([
+      text("("),
+      dom_of_term(c, completes, Var("exists")),
+      dom_of_name(Text(x)),
+      text(":"),
+      dom_of_term(c, completes, t1),
+      text("."),
+      dom_of_term(c, completes, t3),
+      text(")"),
+    ])
+  | Ap(Ap(Var("exists"), t1), t2) =>
+    oneline([
+      text("("),
+      dom_of_term(c, completes, Var("exists")),
+      dom_of_term(c, completes, t1),
+      text("."),
+      dom_of_term(c, completes, t2),
+      text(")"),
+    ])
   | Ap(e1, e2) =>
     oneline([
       text("("),
@@ -87,6 +119,13 @@ let dom_of_mark = (c: context, completes: list(string), m: mark): Node.t =>
       dom_of_term(c, completes, t1),
       Node.text(" but found inconsistent type "),
       dom_of_term(c, completes, t2),
+    ])
+  | NotTyp(t) =>
+    oneline([
+      Node.text("Types must be of type "),
+      dom_of_term(c, completes, Typ),
+      Node.text(" but found inconsistent type "),
+      dom_of_term(c, completes, t),
     ])
   };
 

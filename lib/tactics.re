@@ -168,7 +168,7 @@ let suggest_ap = (z: zterm) => {
 // Fill hole with a variable from the context of matching complete terme
 let fill_var = (z: zterm) => {
   let g = local_goal([], Hole, z);
-  if (complete_term([], g)) {
+  if (no_holes_term(g)) {
     let c = local_context([], z);
     let good_var = ((_, t)) => g == t;
     switch (List.filter(good_var, c)) {
