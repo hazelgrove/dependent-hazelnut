@@ -27,7 +27,7 @@ type edit_action =
   | MakeLet
   | MakeArrow
   | TextAction
-  | GiveTerm(term)
+  | GiveTerm(pterm)
   | FillVar
   | Refine
   | MakeLemma
@@ -87,9 +87,6 @@ let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
   | (AddString(s), Cursor(Var(x))) => Cursor(Var(x ++ s))
   | (Backspace, Cursor(Var(x))) when String.length(x) == 1 => Cursor(Hole)
   | (Backspace, Cursor(Var(x))) => Cursor(Var(backspace(x)))
-  | (AddString(s), Cursor(Base(x))) => Cursor(Base(x ++ s))
-  | (Backspace, Cursor(Base(x))) when String.length(x) == 1 => Cursor(Hole)
-  | (Backspace, Cursor(Base(x))) => Cursor(Base(backspace(x)))
   | (Backspace, Cursor(_)) => Cursor(Hole)
   | (MakeTyp, Cursor(_)) => Cursor(Typ)
   | (MakeArrow, Cursor(t)) => RArrow(Hole, t, Cursor(Hole))
@@ -99,26 +96,33 @@ let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
   // | (MakeFun, Cursor(Hole)) => XFun(Cursor(Hole), Hole, Hole)
   // | (MakeAp, Cursor(Hole)) => LAp(Cursor(Hole), Hole)
   // | (MakeLet, Cursor(Hole)) => XLet(Cursor(Hole), Hole, Hole, Hole)
-  | (TextAction, Cursor(Var(x)))
-  | (TextAction, Cursor(Mark(_, Var(x))))
-  | (TextAction, Cursor(Base(x)))
-  | (TextAction, Cursor(Mark(_, Base(x)))) =>
+  | (TextAction, Cursor(Var(x))) =>
     switch (edit_action_of_text(x)) {
     | Some(a') => apply_zterm(a', Cursor(Hole))
     | None => apply_zterm(MakeAp, z)
     }
   | (TextAction, Cursor(_)) => apply_zterm(MakeAp, z)
   | (GiveTerm(e), z) => give_term(z, e)
-  | (FillVar, z) => fill_var(z)
-  | (Refine, z) => refine(z)
-  | (MakeLemma, z) => make_lemma(z)
-  | (Auto, z) => auto(z)
-  | (FullAuto, z) => full_auto(z)
+  | (FillVar, z) =>
+    print_endline("not implemented");
+    z; //fill_var(z)
+  | (Refine, z) =>
+    print_endline("not implemented");
+    z; //refine(z)
+  | (MakeLemma, z) =>
+    print_endline("not implemented");
+    z; //make_lemma(z)
+  | (Auto, z) =>
+    print_endline("not implemented");
+    z; //auto(z)
+  | (FullAuto, z) =>
+    print_endline("not implemented");
+    z; //full_auto(z)
   | (Save, z) =>
-    switch (term_at_cursor(z)) {
+    switch (pterm_at_cursor(z)) {
     | None => z
     | Some(e) =>
-      print_endline(string_of_term(e));
+      print_endline(string_of_pterm(e));
       z;
     }
 
@@ -153,7 +157,6 @@ let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
   // | _ => z
   // }
   // | (Auto, z) => apply_zterm(Refine, apply_zterm(FillVar, z))
-  | (a, Mark(m, z)) => Mark(m, apply_zterm(a, z))
   | (a, XArrow(z, t1, t2)) => XArrow(apply_zname(a, z), t1, t2)
   | (a, LArrow(x, z, t2)) => LArrow(x, apply_zterm(a, z), t2)
   | (a, RArrow(x, t1, z)) => RArrow(x, t1, apply_zterm(a, z))

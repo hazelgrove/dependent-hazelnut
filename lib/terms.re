@@ -5,30 +5,30 @@ type name =
 type zname =
   | Cursor(name);
 
-type pure_term =
+// Or "pure term" - what's under and around the cursor in a zterm
+type pterm =
   | Hole
   | Typ
   | Var(string)
-  | Base(string)
-  | Arrow(name, pure_term, pure_term)
-  | Fun(name, pure_term, pure_term)
-  | Ap(pure_term, pure_term)
-  | Let(name, pure_term, pure_term, pure_term);
+  | Arrow(name, pterm, pterm)
+  | Fun(name, pterm, pterm)
+  | Ap(pterm, pterm)
+  | Let(name, pterm, pterm, pterm);
 
 type zterm =
-  | Cursor(pure_term)
-  | XArrow(zname, pure_term, pure_term)
-  | LArrow(name, zterm, pure_term)
-  | RArrow(name, pure_term, zterm)
-  | XFun(zname, pure_term, pure_term)
-  | TFun(name, zterm, pure_term)
-  | EFun(name, pure_term, zterm)
-  | LAp(zterm, pure_term)
-  | RAp(pure_term, zterm)
-  | XLet(zname, pure_term, pure_term, pure_term)
-  | TLet(name, zterm, pure_term, pure_term)
-  | E1Let(name, pure_term, zterm, pure_term)
-  | E2Let(name, pure_term, pure_term, zterm);
+  | Cursor(pterm)
+  | XArrow(zname, pterm, pterm)
+  | LArrow(name, zterm, pterm)
+  | RArrow(name, pterm, zterm)
+  | XFun(zname, pterm, pterm)
+  | TFun(name, zterm, pterm)
+  | EFun(name, pterm, zterm)
+  | LAp(zterm, pterm)
+  | RAp(pterm, zterm)
+  | XLet(zname, pterm, pterm, pterm)
+  | TLet(name, zterm, pterm, pterm)
+  | E1Let(name, pterm, zterm, pterm)
+  | E2Let(name, pterm, pterm, zterm);
 
 type info = {
   c: context,
@@ -36,6 +36,8 @@ type info = {
   en: env,
   goal: option(term),
   syn: option(term),
+  cursed: bool,
+  name_cursed: bool,
 }
 
 and mark =

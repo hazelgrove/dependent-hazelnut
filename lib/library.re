@@ -1,38 +1,38 @@
 open Terms;
 
-let simply_typed_library =
-  E1Let(
-    Text("thm1"),
-    Arrow(
-      Hole,
-      Arrow(Hole, Base("a"), Arrow(Hole, Base("b"), Base("c"))),
-      Arrow(Hole, Base("b"), Arrow(Hole, Base("a"), Base("c"))),
-    ),
-    Cursor(Hole),
-    Let(
-      Text("thm2"),
-      Arrow(
-        Hole,
-        Arrow(Hole, Base("a"), Arrow(Hole, Base("b"), Base("c"))),
-        Arrow(
-          Hole,
-          Arrow(Hole, Base("a"), Base("b")),
-          Arrow(Hole, Base("a"), Base("c")),
-        ),
-      ),
-      Hole,
-      Let(
-        Text("thm3"),
-        Arrow(
-          Hole,
-          Arrow(Hole, Arrow(Hole, Base("a"), Base("a")), Base("b")),
-          Base("b"),
-        ),
-        Hole,
-        Hole,
-      ),
-    ),
-  );
+// let simply_typed_library =
+//   E1Let(
+//     Text("thm1"),
+//     Arrow(
+//       Hole,
+//       Arrow(Hole, Base("a"), Arrow(Hole, Base("b"), Base("c"))),
+//       Arrow(Hole, Base("b"), Arrow(Hole, Base("a"), Base("c"))),
+//     ),
+//     Cursor(Hole),
+//     Let(
+//       Text("thm2"),
+//       Arrow(
+//         Hole,
+//         Arrow(Hole, Base("a"), Arrow(Hole, Base("b"), Base("c"))),
+//         Arrow(
+//           Hole,
+//           Arrow(Hole, Base("a"), Base("b")),
+//           Arrow(Hole, Base("a"), Base("c")),
+//         ),
+//       ),
+//       Hole,
+//       Let(
+//         Text("thm3"),
+//         Arrow(
+//           Hole,
+//           Arrow(Hole, Arrow(Hole, Base("a"), Base("a")), Base("b")),
+//           Base("b"),
+//         ),
+//         Hole,
+//         Hole,
+//       ),
+//     ),
+//   );
 
 let library =
   E1Let(

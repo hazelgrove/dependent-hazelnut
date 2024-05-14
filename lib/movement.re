@@ -27,56 +27,56 @@ let rec move_zterm = (d, z): zterm =>
   | (Down, Cursor(Let(x, t, e1, e2))) => XLet(Cursor(x), t, e1, e2)
   | (Left, LArrow(x, z, t2)) =>
     let z' = move_zterm(Left, z);
-    z != z' ? LArrow(x, z', t2) : XArrow(Cursor(x), term_of_zterm(z), t2);
+    z != z' ? LArrow(x, z', t2) : XArrow(Cursor(x), pterm_of_zterm(z), t2);
   | (Left, RArrow(x, t1, z)) =>
     let z' = move_zterm(Left, z);
-    z != z' ? RArrow(x, t1, z') : LArrow(x, Cursor(t1), term_of_zterm(z));
+    z != z' ? RArrow(x, t1, z') : LArrow(x, Cursor(t1), pterm_of_zterm(z));
   | (Left, TFun(x, z, e)) =>
     let z' = move_zterm(Left, z);
-    z != z' ? TFun(x, z', e) : XFun(Cursor(x), term_of_zterm(z), e);
+    z != z' ? TFun(x, z', e) : XFun(Cursor(x), pterm_of_zterm(z), e);
   | (Left, EFun(x, t, z)) =>
     let z' = move_zterm(Left, z);
-    z != z' ? EFun(x, t, z') : TFun(x, Cursor(t), term_of_zterm(z));
+    z != z' ? EFun(x, t, z') : TFun(x, Cursor(t), pterm_of_zterm(z));
   | (Left, RAp(e1, z)) =>
     let z' = move_zterm(Left, z);
-    z != z' ? RAp(e1, z') : LAp(Cursor(e1), term_of_zterm(z));
+    z != z' ? RAp(e1, z') : LAp(Cursor(e1), pterm_of_zterm(z));
   | (Left, TLet(x, z, e1, e2)) =>
     let z' = move_zterm(Left, z);
     z != z'
-      ? TLet(x, z', e1, e2) : XLet(Cursor(x), term_of_zterm(z), e1, e2);
+      ? TLet(x, z', e1, e2) : XLet(Cursor(x), pterm_of_zterm(z), e1, e2);
   | (Left, E1Let(x, t, z, e2)) =>
     let z' = move_zterm(Left, z);
     z != z'
-      ? E1Let(x, t, z', e2) : TLet(x, Cursor(t), term_of_zterm(z), e2);
+      ? E1Let(x, t, z', e2) : TLet(x, Cursor(t), pterm_of_zterm(z), e2);
   | (Left, E2Let(x, t, e1, z)) =>
     let z' = move_zterm(Left, z);
     z != z'
-      ? E2Let(x, t, e1, z') : E1Let(x, t, Cursor(e1), term_of_zterm(z));
+      ? E2Let(x, t, e1, z') : E1Let(x, t, Cursor(e1), pterm_of_zterm(z));
   | (Right, XArrow(z, t1, t2)) => LArrow(name_of_zname(z), Cursor(t1), t2)
   | (Right, LArrow(x, z, t2)) =>
     let z' = move_zterm(Right, z);
-    z != z' ? LArrow(x, z', t2) : RArrow(x, term_of_zterm(z), Cursor(t2));
+    z != z' ? LArrow(x, z', t2) : RArrow(x, pterm_of_zterm(z), Cursor(t2));
   | (Right, XFun(z, t, e)) => TFun(name_of_zname(z), Cursor(t), e)
   | (Right, TFun(x, z, e)) =>
     let z' = move_zterm(Right, z);
     z != z'
       ? TFun(x, z', e)
-      : EFun(x, term_of_zterm(z), move_zterm(Down, Cursor(e))); // descend
+      : EFun(x, pterm_of_zterm(z), move_zterm(Down, Cursor(e))); // descend
   | (Right, LAp(z, e2)) =>
     let z' = move_zterm(Right, z);
-    z != z' ? LAp(z', e2) : RAp(term_of_zterm(z), Cursor(e2));
+    z != z' ? LAp(z', e2) : RAp(pterm_of_zterm(z), Cursor(e2));
   | (Right, XLet(z, t, e1, e2)) =>
     TLet(name_of_zname(z), Cursor(t), e1, e2)
   | (Right, TLet(x, z, e1, e2)) =>
     let z' = move_zterm(Right, z);
     z != z'
       ? TLet(x, z', e1, e2)
-      : E1Let(x, term_of_zterm(z), move_zterm(Down, Cursor(e1)), e2); // descend
+      : E1Let(x, pterm_of_zterm(z), move_zterm(Down, Cursor(e1)), e2); // descend
   | (Right, E1Let(x, t, z, e2)) =>
     let z' = move_zterm(Right, z);
     z != z'
       ? E1Let(x, t, z', e2)
-      : E2Let(x, t, term_of_zterm(z), move_zterm(Down, Cursor(e2))); // descend
+      : E2Let(x, t, pterm_of_zterm(z), move_zterm(Down, Cursor(e2))); // descend
   // | (d, XFun(z, t, e)) => XFun(apply_zname(a, z), t, e)
   | (d, LArrow(x, z, t)) => LArrow(x, move_zterm(d, z), t)
   | (d, RArrow(x, t, z)) => RArrow(x, t, move_zterm(d, z))

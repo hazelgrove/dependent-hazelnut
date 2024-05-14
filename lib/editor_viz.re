@@ -6,53 +6,51 @@ open Lang;
 open Lang_viz;
 
 let dom_of_state = (z: zterm) => {
-  // let typ = type_of(term_of_zterm(z));
-  // let type_info =
-  //   switch (typ) {
-  //   | None => Node.text(":(")
-  //   | Some(t) => dom_of_term(t)
-  //   };
-  // let complete_info =
-  //   switch (complete_zterm(z), typ) {
-  //   | (true, Some(_)) => Node.text("🟩")
-  //   | (false, Some(t)) =>
-  //     complete_typ(t) ? Node.text("❓") : Node.text("")
-  //   | _ => Node.text("")
-  //   };
-  let (marked_e, _) = syn([], [], term_of_zterm(z));
-  let merged_z = mark_merge(z, marked_e);
-  let exp_info = dom_of_zterm([], [], [], merged_z);
-  let local_c = local_context([], z);
-  let local_en = local_env([], z);
-  let context_info = doms_of_context(local_c, local_en);
-  let goal_info =
-    dom_of_term(local_c, local_en, [], local_goal([], [], Hole, z));
-  let mark_info =
-    doms_of_marks(local_c, local_en, [], local_marks(merged_z));
-  let mark_info =
-    List.length(mark_info) > 0 ? [Node.br()] @ mark_info @ [Node.hr()] : [];
+  let initial_contexts: contexts = {c: [], en: []};
+  let p = pterm_of_zterm(z);
+  let e = syn(initial_contexts, term_of_pterm(p));
+  // let e = place_cursor(z, e);
+
+  let e' = term_at_cursor(z, e);
+  let i = get_info(e');
+
+  let cursed_e = place_cursor(z, e);
+  let e_dom = dom_of_term(cursed_e);
+
+  let c_dom = doms_of_context(i.c);
+  let goal_dom =
+    switch (i.goal) {
+    | None => Node.Text("-")
+    | Some(goal) => dom_of_term(goal)
+    };
+  let rec top_marks = z =>
+    switch (z) {
+    | Mark(r) => [r.m, ...top_marks(r.e)]
+    | _ => []
+    };
+  let mark_doms = doms_of_marks(top_marks(e'));
+  let mark_dom =
+    List.length(mark_doms) > 0 ? [Node.br()] @ mark_doms @ [Node.hr()] : [];
+
   Node.div(
     ~attr=Attr.create("class", "code-display"),
     [
       Node.div(
         ~attr=Attr.create("class", "context-display"),
         [
-          Node.div([
-            // type_info, complete_info, Node.hr(),
-            exp_info,
-          ]),
+          Node.div([e_dom]),
           Node.div(
             ~attr=Attr.create("class", "context-div"),
-            mark_info
+            mark_dom
             @ [
               Node.text("Goal"),
               Node.hr(),
-              goal_info,
+              goal_dom,
               Node.hr(),
               Node.text("Context"),
               Node.hr(),
             ]
-            @ context_info,
+            @ c_dom,
           ),
         ],
       ),

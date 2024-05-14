@@ -1,6 +1,199 @@
 open List;
 open Terms;
 
+let name_of_zname = (z: zname): name =>
+  switch (z) {
+  | Cursor(x) => x
+  };
+
+let rec pterm_of_zterm = (z: zterm): pterm =>
+  switch (z) {
+  | Cursor(t) => t
+  | XArrow(z, t1, t2) => Arrow(name_of_zname(z), t1, t2)
+  | LArrow(x, z, t) => Arrow(x, pterm_of_zterm(z), t)
+  | RArrow(x, t, z) => Arrow(x, t, pterm_of_zterm(z))
+  | XFun(z, t, e) => Fun(name_of_zname(z), t, e)
+  | TFun(x, z, e) => Fun(x, pterm_of_zterm(z), e)
+  | EFun(x, t, z) => Fun(x, t, pterm_of_zterm(z))
+  | LAp(z, e) => Ap(pterm_of_zterm(z), e)
+  | RAp(e, z) => Ap(e, pterm_of_zterm(z))
+  | XLet(z, t, e1, e2) => Let(name_of_zname(z), t, e1, e2)
+  | TLet(x, z, e1, e2) => Let(x, pterm_of_zterm(z), e1, e2)
+  | E1Let(x, t, z, e2) => Let(x, t, pterm_of_zterm(z), e2)
+  | E2Let(x, t, e1, z) => Let(x, t, e1, pterm_of_zterm(z))
+  };
+
+let rec pterm_at_cursor = (z: zterm) =>
+  switch (z) {
+  | Cursor(e) => Some(e)
+  | XArrow(_, _, _) => None
+  | LArrow(_, z, _)
+  | RArrow(_, _, z) => pterm_at_cursor(z)
+  | XFun(_, _, _) => None
+  | TFun(_, z, _)
+  | EFun(_, _, z)
+  | LAp(z, _)
+  | RAp(_, z) => pterm_at_cursor(z)
+  | XLet(_, _, _, _) => None
+  | TLet(_, z, _, _)
+  | E1Let(_, _, z, _)
+  | E2Let(_, _, _, z) => pterm_at_cursor(z)
+  };
+
+let default_info: info = {
+  c: [],
+  // completes: [],
+  en: [],
+  goal: None,
+  syn: None,
+  cursed: false,
+  name_cursed: false,
+};
+
+let default_hole: term = Hole({i: default_info});
+
+let rec term_of_pterm = (e: pterm) =>
+  switch (e) {
+  | Hole => Hole({i: default_info})
+  | Typ => Typ({i: default_info})
+  | Var(x) => Var({i: default_info, x})
+  | Arrow(x, t1, t2) =>
+    Arrow({
+      i: default_info,
+      x,
+      t1: term_of_pterm(t1),
+      t2: term_of_pterm(t2),
+    })
+  | Fun(x, t, e) =>
+    Fun({i: default_info, x, t: term_of_pterm(t), e: term_of_pterm(e)})
+  | Ap(e1, e2) =>
+    Ap({i: default_info, e1: term_of_pterm(e1), e2: term_of_pterm(e2)})
+  | Let(x, t, e1, e2) =>
+    Let({
+      i: default_info,
+      x,
+      t: term_of_pterm(t),
+      e1: term_of_pterm(e1),
+      e2: term_of_pterm(e2),
+    })
+  };
+
+let rec term_at_cursor = (z: zterm, e: term): term =>
+  switch (z, e) {
+  | (Cursor(_), e) => e
+  | (z, Mark(r)) => term_at_cursor(z, r.e)
+  | (XArrow(_, _, _), _) => e
+  | (LArrow(_, z, _), Arrow(r)) => term_at_cursor(z, r.t1)
+  | (RArrow(_, _, z), Arrow(r)) => term_at_cursor(z, r.t2)
+  | (XFun(_, _, _), _) => e
+  | (TFun(_, z, _), Fun(r)) => term_at_cursor(z, r.t)
+  | (EFun(_, _, z), Fun(r)) => term_at_cursor(z, r.e)
+  | (LAp(z, _), Ap(r)) => term_at_cursor(z, r.e1)
+  | (RAp(_, z), Ap(r)) => term_at_cursor(z, r.e2)
+  | (XLet(_, _, _, _), _) => e
+  | (TLet(_, z, _, _), Let(r)) => term_at_cursor(z, r.t)
+  | (E1Let(_, _, z, _), Let(r)) => term_at_cursor(z, r.e1)
+  | (E2Let(_, _, _, z), Let(r)) => term_at_cursor(z, r.e2)
+  | _ => failwith("term misalignment")
+  };
+
+let get_info = (e: term): info =>
+  switch (e) {
+  | Hole(r) => r.i
+  | Typ(r) => r.i
+  | Mark(r) => r.i
+  | Var(r) => r.i
+  | Arrow(r) => r.i
+  | Fun(r) => r.i
+  | Ap(r) => r.i
+  | Let(r) => r.i
+  };
+
+let set_info = (e: term, i): term =>
+  switch (e) {
+  | Hole(_) => Hole({i: i})
+  | Typ(_) => Typ({i: i})
+  | Mark(r) => Mark({...r, i})
+  | Var(r) => Var({...r, i})
+  | Arrow(r) => Arrow({...r, i})
+  | Fun(r) => Fun({...r, i})
+  | Ap(r) => Ap({...r, i})
+  | Let(r) => Let({...r, i})
+  };
+
+let string_of_name = (x: name): string =>
+  switch (x) {
+  | Hole => "Hole"
+  | Text(x) => "Text(\"" ++ x ++ "\")"
+  };
+
+// let rec string_of_mark = (m: mark): string =>
+//   switch (m) {
+//   | UnknownVar(x) => "UnknownVar(\"" ++ x ++ "\")"
+//   | FunNotArrow(t) => "FunNotArrow(" ++ string_of_pterm(t) ++ ")"
+//   | Mismatch(t1, t2) =>
+//     " Mismatch(" ++ string_of_pterm(t1) ++ "," ++ string_of_pterm(t2) ++ ")"
+//   | NotTyp(t) => "NotTyp(" ++ string_of_pterm(t) ++ ")"
+// }
+
+let rec string_of_pterm = (e: pterm): string =>
+  switch (e) {
+  | Hole => "Hole"
+  | Typ => "Typ"
+  | Var(x) => "Var(\"" ++ x ++ "\")"
+  | Arrow(x, t1, t2) =>
+    "Arrow("
+    ++ string_of_name(x)
+    ++ ","
+    ++ string_of_pterm(t1)
+    ++ ","
+    ++ string_of_pterm(t2)
+    ++ ")"
+  | Fun(x, t, e) =>
+    "Fun("
+    ++ string_of_name(x)
+    ++ ","
+    ++ string_of_pterm(t)
+    ++ ","
+    ++ string_of_pterm(e)
+    ++ ")"
+  | Ap(e1, e2) =>
+    "Ap(" ++ string_of_pterm(e1) ++ "," ++ string_of_pterm(e2) ++ ")"
+  | Let(x, t, e1, e2) =>
+    "Let("
+    ++ string_of_name(x)
+    ++ ","
+    ++ string_of_pterm(t)
+    ++ ","
+    ++ string_of_pterm(e1)
+    ++ ","
+    ++ string_of_pterm(e2)
+    ++ ")"
+  };
+
+let rec place_cursor = (z: zterm, e: term): term => {
+  print_endline(string_of_pterm(pterm_of_zterm(z)));
+  // let curse = (i: info) => {...i, cursed: true};
+  let name_curse = (i: info) => {...i, name_cursed: true};
+  switch (z, e) {
+  | (Cursor(_), e) => set_info(e, {...get_info(e), cursed: true})
+  | (z, Mark(r)) => Mark({...r, e: place_cursor(z, r.e)})
+  | (XArrow(_, _, _), Arrow(r)) => Arrow({...r, i: name_curse(r.i)})
+  | (LArrow(_, z, _), Arrow(r)) => Arrow({...r, t1: place_cursor(z, r.t1)})
+  | (RArrow(_, _, z), Arrow(r)) => Arrow({...r, t2: place_cursor(z, r.t2)})
+  | (XFun(_, _, _), Fun(r)) => Fun({...r, i: name_curse(r.i)})
+  | (TFun(_, z, _), Fun(r)) => Fun({...r, t: place_cursor(z, r.t)})
+  | (EFun(_, _, z), Fun(r)) => Fun({...r, e: place_cursor(z, r.e)})
+  | (LAp(z, _), Ap(r)) => Ap({...r, e1: place_cursor(z, r.e1)})
+  | (RAp(_, z), Ap(r)) => Ap({...r, e2: place_cursor(z, r.e2)})
+  | (XLet(_, _, _, _), Let(r)) => Let({...r, i: name_curse(r.i)})
+  | (TLet(_, z, _, _), Let(r)) => Let({...r, t: place_cursor(z, r.t)})
+  | (E1Let(_, _, z, _), Let(r)) => Let({...r, e1: place_cursor(z, r.e1)})
+  | (E2Let(_, _, _, z), Let(r)) => Let({...r, e2: place_cursor(z, r.e2)})
+  | _ => failwith("term misalignment")
+  };
+};
+
 let valid_name = x => String.trim(x) != "";
 
 let rec extend_context = (x: string, t: term, c: context): context =>
@@ -49,11 +242,6 @@ let rec lookup = (x: string, c: context) => {
   };
 };
 
-// let name_of_zname = (z: zname): name =>
-//   switch (z) {
-//   | Cursor(x) => x
-//   };
-
 // let rec term_of_pure_term = (e: pure_term): term => {
 //   let e' =
 //     switch (e) {
@@ -61,54 +249,54 @@ let rec lookup = (x: string, c: context) => {
 //     | Typ => Typ
 //     | Var(x) => Var(x)
 //     | Arrow(x, t1, t2) =>
-//       Arrow(x, term_of_pure_term(t1), term_of_pure_term(t2))
-//     | Fun(x, t, e) => Fun(x, term_of_pure_term(t), term_of_pure_term(e))
-//     | Ap(e1, e2) => Ap(term_of_pure_term(e1), term_of_pure_term(e2))
+//       Arrow(x, t1), t2))
+//     | Fun(x, t, e) => Fun(x, t), e))
+//     | Ap(e1, e2) => Ap(e1), e2))
 //     | Let(x, t, e1, e2) =>
 //       Let(
 //         x,
-//         term_of_pure_term(t),
-//         term_of_pure_term(e1),
-//         term_of_pure_term(e2),
+//         t),
+//         e1),
+//         e2),
 //       )
 //     };
-//   Info(None, e');
+//   e');
 // };
 // let rec term_of_zterm = (z: zterm): term => {
 //   switch (z) {
-//   | Cursor(t) => term_of_pure_term(t)
+//   | Cursor(t) => t)
 //   | XArrow(z, t1, t2) =>
 //     Info(
 //       None,
 //       Arrow(
 //         name_of_zname(z),
-//         term_of_pure_term(t1),
-//         term_of_pure_term(t2),
+//         t1),
+//         t2),
 //       ),
 //     )
 //   | LArrow(x, z, t) =>
-//     Info(None, Arrow(x, term_of_zterm(z), term_of_pure_term(t)))
+//     Arrow(x, term_of_zterm(z), t)))
 //   | RArrow(x, t, z) =>
-//     Info(None, Arrow(x, term_of_pure_term(t), term_of_zterm(z)))
+//     Arrow(x, t), term_of_zterm(z)))
 //   | XFun(z, t, e) =>
 //     Info(
 //       None,
-//       Fun(name_of_zname(z), term_of_pure_term(t), term_of_pure_term(e)),
+//       Fun(name_of_zname(z), t), e)),
 //     )
 //   | TFun(x, z, e) =>
-//     Info(None, Fun(x, term_of_zterm(z), term_of_pure_term(e)))
+//     Fun(x, term_of_zterm(z), e)))
 //   | EFun(x, t, z) =>
-//     Info(None, Fun(x, term_of_pure_term(t), term_of_zterm(z)))
-//   | LAp(z, e) => Info(None, Ap(term_of_zterm(z), term_of_pure_term(e)))
-//   | RAp(e, z) => Info(None, Ap(term_of_pure_term(e), term_of_zterm(z)))
+//     Fun(x, t), term_of_zterm(z)))
+//   | LAp(z, e) => Ap(term_of_zterm(z), e)))
+//   | RAp(e, z) => Ap(e), term_of_zterm(z)))
 //   | XLet(z, t, e1, e2) =>
 //     Info(
 //       None,
 //       Let(
 //         name_of_zname(z),
-//         term_of_pure_term(t),
-//         term_of_pure_term(e1),
-//         term_of_pure_term(e2),
+//         t),
+//         e1),
+//         e2),
 //       ),
 //     )
 //   | TLet(x, z, e1, e2) =>
@@ -117,8 +305,8 @@ let rec lookup = (x: string, c: context) => {
 //       Let(
 //         x,
 //         term_of_zterm(z),
-//         term_of_pure_term(e1),
-//         term_of_pure_term(e2),
+//         e1),
+//         e2),
 //       ),
 //     )
 //   | E1Let(x, t, z, e2) =>
@@ -126,9 +314,9 @@ let rec lookup = (x: string, c: context) => {
 //       None,
 //       Let(
 //         x,
-//         term_of_pure_term(t),
+//         t),
 //         term_of_zterm(z),
-//         term_of_pure_term(e2),
+//         e2),
 //       ),
 //     )
 //   | E2Let(x, t, e1, z) =>
@@ -136,8 +324,8 @@ let rec lookup = (x: string, c: context) => {
 //       None,
 //       Let(
 //         x,
-//         term_of_pure_term(t),
-//         term_of_pure_term(e1),
+//         t),
+//         e1),
 //         term_of_zterm(z),
 //       ),
 //     )
@@ -303,16 +491,6 @@ and consist = (en: env, t1, t2: term): bool => {
   head_consist(en, t1', t2');
 };
 
-let default_info: info = {
-  c: [],
-  // completes: [],
-  en: [],
-  goal: None,
-  syn: None,
-};
-
-let default_hole: term = Hole({i: default_info});
-
 // Matched Set type. Invariant: either returns None or Some(Typ(_))
 let typ_of_term = (t: term): option(term) => {
   switch (t) {
@@ -338,7 +516,7 @@ let arrow_of_term = (t: term): option(term) => {
 
 type contexts = {
   c: context,
-  completes: list(term),
+  // completes: list(term),
   en: env,
 };
 
@@ -350,18 +528,6 @@ let store_contexts = (cs: contexts, i: info): info => {
     en: cs.en,
   };
 };
-
-let get_info = (e: term): info =>
-  switch (e) {
-  | Hole(r) => r.i
-  | Typ(r) => r.i
-  | Mark(r) => r.i
-  | Var(r) => r.i
-  | Arrow(r) => r.i
-  | Fun(r) => r.i
-  | Ap(r) => r.i
-  | Let(r) => r.i
-  };
 
 // Synthetic static judgement. returns new_expression
 // Info is filled out, and marks are inserted

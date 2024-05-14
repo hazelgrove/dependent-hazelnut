@@ -8,17 +8,11 @@ let find_hole_name = (x: name): option(zname) =>
   | Text(_) => None
   };
 
-let rec find_hole_term = (e: term) =>
+let rec find_hole_term = (e: pterm) =>
   switch (e) {
   | Hole => Some(Cursor(Hole))
-  | Typ => None
-  | Mark(m, e) =>
-    switch (find_hole_term(e)) {
-    | Some(z) => Some(Mark(m, z))
-    | None => None
-    }
-  | Var(_)
-  | Base(_) => None
+  | Typ
+  | Var(_) => None
   | Arrow(x, t1, t2) =>
     switch (find_hole_name(x)) {
     | Some(z) => Some(XArrow(z, t1, t2))
@@ -82,11 +76,6 @@ let find_hole_zname = (z: zname): option(zname) =>
 let rec find_hole_zterm = (~loop=false, z: zterm) => {
   switch (z) {
   | Cursor(_) => None
-  | Mark(m, z) =>
-    switch (find_hole_zterm(z)) {
-    | Some(z) => Some(Mark(m, z))
-    | None => None
-    }
   | XArrow(z, t1, t2) =>
     switch (find_hole_zname(z)) {
     | Some(z') => Some(XArrow(z', t1, t2))
@@ -105,11 +94,11 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | Some(z') => Some(LArrow(x, z', t2))
     | None =>
       switch (find_hole_term(t2)) {
-      | Some(z') => Some(RArrow(x, term_of_zterm(z), z'))
+      | Some(z') => Some(RArrow(x, pterm_of_zterm(z), z'))
       | None =>
         if (loop) {
           switch (find_hole_name(x)) {
-          | Some(z') => Some(XArrow(z', term_of_zterm(z), t2))
+          | Some(z') => Some(XArrow(z', pterm_of_zterm(z), t2))
           | None =>
             switch (find_hole_zterm(~loop=true, z)) {
             | Some(z') => Some(LArrow(x, z', t2))
@@ -127,10 +116,10 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | None =>
       if (loop) {
         switch (find_hole_name(x)) {
-        | Some(z') => Some(XArrow(z', t1, term_of_zterm(z)))
+        | Some(z') => Some(XArrow(z', t1, pterm_of_zterm(z)))
         | None =>
           switch (find_hole_term(t1)) {
-          | Some(z') => Some(LArrow(x, z', term_of_zterm(z)))
+          | Some(z') => Some(LArrow(x, z', pterm_of_zterm(z)))
           | None =>
             switch (find_hole_zterm(~loop=true, z)) {
             | Some(z') => Some(RArrow(x, t1, z'))
@@ -160,11 +149,11 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | Some(z') => Some(TFun(x, z', e))
     | None =>
       switch (find_hole_term(e)) {
-      | Some(z') => Some(EFun(x, term_of_zterm(z), z'))
+      | Some(z') => Some(EFun(x, pterm_of_zterm(z), z'))
       | None =>
         if (loop) {
           switch (find_hole_name(x)) {
-          | Some(z') => Some(XFun(z', term_of_zterm(z), e))
+          | Some(z') => Some(XFun(z', pterm_of_zterm(z), e))
           | None =>
             switch (find_hole_zterm(~loop=true, z)) {
             | Some(z') => Some(TFun(x, z', e))
@@ -182,10 +171,10 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | None =>
       if (loop) {
         switch (find_hole_name(x)) {
-        | Some(z') => Some(XFun(z', t, term_of_zterm(z)))
+        | Some(z') => Some(XFun(z', t, pterm_of_zterm(z)))
         | None =>
           switch (find_hole_term(t)) {
-          | Some(z') => Some(TFun(x, z', term_of_zterm(z)))
+          | Some(z') => Some(TFun(x, z', pterm_of_zterm(z)))
           | None =>
             switch (find_hole_zterm(~loop=true, z)) {
             | Some(z') => Some(EFun(x, t, z'))
@@ -202,7 +191,7 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | Some(z') => Some(LAp(z', e))
     | None =>
       switch (find_hole_term(e)) {
-      | Some(z') => Some(RAp(term_of_zterm(z), z'))
+      | Some(z') => Some(RAp(pterm_of_zterm(z), z'))
       | None =>
         switch (find_hole_zterm(~loop, z)) {
         | Some(z') => Some(LAp(z', e))
@@ -216,7 +205,7 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | None =>
       if (loop) {
         switch (find_hole_term(e)) {
-        | Some(z') => Some(LAp(z', term_of_zterm(z)))
+        | Some(z') => Some(LAp(z', pterm_of_zterm(z)))
         | None =>
           switch (find_hole_zterm(~loop=true, z)) {
           | Some(z') => Some(RAp(e, z'))
@@ -249,14 +238,14 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | Some(z') => Some(TLet(x, z', e1, e2))
     | None =>
       switch (find_hole_term(e1)) {
-      | Some(z') => Some(E1Let(x, term_of_zterm(z), z', e2))
+      | Some(z') => Some(E1Let(x, pterm_of_zterm(z), z', e2))
       | None =>
         switch (find_hole_term(e2)) {
-        | Some(z') => Some(E2Let(x, term_of_zterm(z), e1, z'))
+        | Some(z') => Some(E2Let(x, pterm_of_zterm(z), e1, z'))
         | None =>
           if (loop) {
             switch (find_hole_name(x)) {
-            | Some(z') => Some(XLet(z', term_of_zterm(z), e1, e2))
+            | Some(z') => Some(XLet(z', pterm_of_zterm(z), e1, e2))
             | None =>
               switch (find_hole_zterm(~loop=true, z)) {
               | Some(z') => Some(TLet(x, z', e1, e2))
@@ -274,14 +263,14 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | Some(z') => Some(E1Let(x, t, z', e2))
     | None =>
       switch (find_hole_term(e2)) {
-      | Some(z') => Some(E2Let(x, t, term_of_zterm(z), z'))
+      | Some(z') => Some(E2Let(x, t, pterm_of_zterm(z), z'))
       | None =>
         if (loop) {
           switch (find_hole_name(x)) {
-          | Some(z') => Some(XLet(z', t, term_of_zterm(z), e2))
+          | Some(z') => Some(XLet(z', t, pterm_of_zterm(z), e2))
           | None =>
             switch (find_hole_term(t)) {
-            | Some(z') => Some(TLet(x, z', term_of_zterm(z), e2))
+            | Some(z') => Some(TLet(x, z', pterm_of_zterm(z), e2))
             | None =>
               switch (find_hole_zterm(~loop=true, z)) {
               | Some(z') => Some(E1Let(x, t, z', e2))
@@ -300,13 +289,13 @@ let rec find_hole_zterm = (~loop=false, z: zterm) => {
     | None =>
       if (loop) {
         switch (find_hole_name(x)) {
-        | Some(z') => Some(XLet(z', t, e1, term_of_zterm(z)))
+        | Some(z') => Some(XLet(z', t, e1, pterm_of_zterm(z)))
         | None =>
           switch (find_hole_term(t)) {
-          | Some(z') => Some(TLet(x, z', e1, term_of_zterm(z)))
+          | Some(z') => Some(TLet(x, z', e1, pterm_of_zterm(z)))
           | None =>
             switch (find_hole_term(e1)) {
-            | Some(z') => Some(E1Let(x, t, z', term_of_zterm(z)))
+            | Some(z') => Some(E1Let(x, t, z', pterm_of_zterm(z)))
             | None =>
               switch (find_hole_zterm(~loop=true, z)) {
               | Some(z') => Some(E2Let(x, t, e1, z'))
