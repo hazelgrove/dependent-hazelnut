@@ -38,6 +38,7 @@ type info = {
   syn: option(term),
   cursed: bool,
   name_cursed: bool,
+  cursor_inside: bool,
 }
 
 and mark =

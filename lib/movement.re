@@ -55,7 +55,9 @@ let rec move_zterm = (d, z): zterm =>
   | (Right, XArrow(z, t1, t2)) => LArrow(name_of_zname(z), Cursor(t1), t2)
   | (Right, LArrow(x, z, t2)) =>
     let z' = move_zterm(Right, z);
-    z != z' ? LArrow(x, z', t2) : RArrow(x, pterm_of_zterm(z), Cursor(t2));
+    z != z'
+      ? LArrow(x, z', t2)
+      : RArrow(x, pterm_of_zterm(z), move_zterm(Down, Cursor(t2))); // descend
   | (Right, XFun(z, t, e)) => TFun(name_of_zname(z), Cursor(t), e)
   | (Right, TFun(x, z, e)) =>
     let z' = move_zterm(Right, z);

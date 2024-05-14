@@ -8,6 +8,7 @@ let string_aliases = [
   ("exists", "∃"),
   ("exists-con", "∃-con"),
   ("exists-rec", "∃-rec"),
+  ("eq", "="),
 ];
 
 let text_of_text = (x: string) =>
@@ -28,71 +29,158 @@ let dom_of_name = (x: name, cursed: bool): Node.t =>
     };
   };
 
-let rec dom_of_term = (~check_cursor=true, e: term): Node.t =>
+type parens_info = {
+  arrow_assoc: bool,
+  fun_assoc: bool,
+  ap_assoc: bool,
+};
+let default_parens_info = {
+  arrow_assoc: false,
+  fun_assoc: false,
+  ap_assoc: false,
+};
+
+let parens = dom => oneline([text("("), dom, text(")")]);
+
+let rec dom_of_term =
+        (
+          ~under_cursor=false,
+          ~inline=false,
+          ~parens_info: parens_info=default_parens_info,
+          e: term,
+        )
+        : Node.t =>
   switch (e) {
   | Hole(r) when r.i.cursed => cursor_hole
-  | e when get_info(e).cursed && check_cursor =>
-    cursor([dom_of_term(~check_cursor=false, e)])
+  | e when get_info(e).cursed && !under_cursor =>
+    cursor([dom_of_term(~under_cursor=true, ~inline, e)])
   | Hole(_) => hole
   | Typ(_) => text("◻")
-  | Mark(r) => mark([dom_of_term(r.e)])
+  | Mark(r) => mark([dom_of_term(~inline, r.e)])
   | Var(r) => text(text_of_text(r.x))
-  // | Arrow({i: _, x: Hole, t1, t2}) =>
-  //   oneline([
-  //     text("("),
-  //     dom_of_term(t1),
-  //     text("⇒"),
-  //     dom_of_term(t2),
-  //     text(")"),
-  //   ])
   | Arrow(r) =>
-    oneline([
-      text("("),
+    let dom = {
+      let binding =
+        switch (r.x) {
+        | Hole when !(r.i.name_cursed || r.i.cursed) => []
+        | _ => [dom_of_name(r.x, r.i.name_cursed), text(":")]
+        };
+      oneline(
+        binding
+        @ [
+          dom_of_term(~inline=true, r.t1),
+          text("⇒"),
+          dom_of_term(
+            ~inline=true,
+            ~parens_info={...default_parens_info, arrow_assoc: true},
+            r.t2,
+          ),
+        ],
+      );
+    };
+    if (parens_info.arrow_assoc || under_cursor) {
+      dom;
+    } else {
+      parens(dom);
+    };
+  | Fun(r) =>
+    let dom1 = [
       dom_of_name(r.x, r.i.name_cursed),
       text(":"),
-      dom_of_term(r.t1),
-      text("⇒"),
-      dom_of_term(r.t2),
+      dom_of_term(~inline=true, r.t),
+      text("→"),
+    ];
+    let dom2 =
+      dom_of_term(
+        ~inline,
+        ~parens_info={...default_parens_info, fun_assoc: true},
+        r.e,
+      );
+    if (inline) {
+      let dom = oneline(dom1 @ [dom2]);
+      if (parens_info.fun_assoc || under_cursor) {
+        dom;
+      } else {
+        parens(dom);
+      };
+    } else {
+      block_indent(dom1, dom2);
+    };
+  | Ap({
+      i: i1,
+      e1: Ap({i: i2, e1: Var(r), e2: t1}),
+      e2: Fun({i: i3, x: Text(x), t: t2, e: body}),
+    })
+      when
+        r.x == "exists"
+        && terms_equal(t1, t2)
+        && !(
+             i1.cursed
+             || i2.cursed
+             || r.i.cursed
+             || i3.cursed
+             || i3.name_cursed
+             || get_info(t2).cursed
+             || get_info(t2).cursor_inside
+           ) =>
+    oneline([
+      text("("),
+      dom_of_term(Var(r)),
+      dom_of_name(Text(x), i3.name_cursed),
+      text(":"),
+      dom_of_term(t1),
+      text("."),
+      dom_of_term(~inline=true, body),
       text(")"),
     ])
-  | Fun(r) =>
-    block_indent(
-      [
-        dom_of_name(r.x, r.i.name_cursed),
-        text(":"),
-        dom_of_term(r.t),
-        text("→"),
-      ],
-      dom_of_term(r.e),
-    )
-  // | Ap(Ap(Var("exists"), t1), Fun(Text(x), t2, t3)) when t1 == t2 =>
+  | Ap({
+      i: _,
+      e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: t1}), e2: t2}),
+      e2: t3,
+    })
+      when
+        r.x == "eq"
+        && !(
+             //  i1.cursed ||
+             i2.cursed
+             || i3.cursed
+             || r.i.cursed
+             || get_info(t1).cursed
+             || get_info(t1).cursor_inside
+           ) =>
+    oneline([
+      text("("),
+      dom_of_term(t2),
+      dom_of_term(Var(r)),
+      // text("["),
+      // dom_of_term(c, en, completes, t1),
+      // text("]"),
+      dom_of_term(t3),
+      text(")"),
+    ])
+  // | Ap(Ap(Var("refl"), _), e) =>
   //   oneline([
+  //     dom_of_term(c, en, completes, Var("refl")),
   //     text("("),
-  //     dom_of_term(Var("exists")),
-  //     dom_of_name(Text(x)),
-  //     text(":"),
-  //     dom_of_term(t1),
-  //     text("."),
-  //     dom_of_term(t3),
-  //     text(")"),
-  //   ])
-  // | Ap(Ap(Var("exists"), t1), t2) =>
-  //   oneline([
-  //     text("("),
-  //     dom_of_term(Var("exists")),
-  //     dom_of_term(t1),
-  //     text("."),
-  //     dom_of_term(t2),
+  //     dom_of_term(c, en, completes, e),
   //     text(")"),
   //   ])
   | Ap(r) =>
-    oneline([
-      text("("),
-      dom_of_term(r.e1),
-      text(")("),
-      dom_of_term(r.e2),
-      text(")"),
-    ])
+    let dom =
+      oneline([
+        dom_of_term(
+          ~inline=true,
+          ~parens_info={...default_parens_info, ap_assoc: true},
+          r.e1,
+        ),
+        text(" "),
+        dom_of_term(~inline=true, r.e2),
+      ]);
+    if (parens_info.ap_assoc || under_cursor) {
+      dom;
+    } else {
+      parens(dom);
+    };
   | Let(r) =>
     sub_block(
       [
@@ -155,162 +243,6 @@ let doms_of_marks = (ms: list(mark)): list(Node.t) => {
   };
   List.map(dom_of_entry, ms);
 };
-
-// let dom_of_zname = (z: zname): Node.t =>
-//   switch (z) {
-//   | Cursor(Hole) => cursor_hole
-//   | Cursor(x) => cursor([dom_of_name(x)])
-//   };
-
-// let rec dom_of_zterm =
-//         (c: context, en: env, completes: list(string), z: zterm): Node.t => {
-//   switch (z) {
-//   | Cursor(Hole) => cursor_hole
-//   | Cursor(e) => cursor([dom_of_term(e)])
-//   | Mark(_, z) => mark([dom_of_zterm(c, en, completes, z)])
-//   | XArrow(z, t1, t2) =>
-//     oneline([
-//       text("("),
-//       dom_of_zname(z),
-//       text(":"),
-//       dom_of_term(t1),
-//       Node.text("⇒"),
-//       dom_of_term(t2),
-//       text(")"),
-//     ])
-//   | LArrow(x, z, t2) =>
-//     oneline([
-//       text("("),
-//       dom_of_name(x),
-//       text(":"),
-//       dom_of_zterm(c, en, completes, z),
-//       Node.text("⇒"),
-//       dom_of_term(t2),
-//       text(")"),
-//     ])
-//   | RArrow(x, t1, z) =>
-//     oneline([
-//       text("("),
-//       dom_of_name(x),
-//       text(":"),
-//       dom_of_term(t1),
-//       Node.text("⇒"),
-//       dom_of_zterm(c, en, completes, z),
-//       text(")"),
-//     ])
-//   | XFun(z, t, e) =>
-//     let c' = extend_context_name(name_of_zname(z), t, c);
-//     let completes' =
-//       extend_complete_list_fun(name_of_zname(z), t, completes);
-//     block_indent(
-//       [dom_of_zname(z), text(":"), dom_of_term(t), text("→")],
-//       dom_of_term(c', en, completes', e),
-//     );
-//   | TFun(x, z, e) =>
-//     let c' = extend_context_name(x, term_of_zterm(z), c);
-//     let completes' =
-//       extend_complete_list_fun(x, term_of_zterm(z), completes);
-//     block_indent(
-//       [
-//         dom_of_name(x),
-//         text(":"),
-//         dom_of_zterm(c, en, completes, z),
-//         text("→"),
-//       ],
-//       dom_of_term(c', en, completes', e),
-//     );
-//   | EFun(x, t, z) =>
-//     let c' = extend_context_name(x, t, c);
-//     let completes' = extend_complete_list_fun(x, t, completes);
-//     block_indent(
-//       [dom_of_name(x), text(":"), dom_of_term(t), text("→")],
-//       dom_of_zterm(c', en, completes', z),
-//     );
-//   | LAp(z, e) =>
-//     oneline([
-//       text("("),
-//       dom_of_zterm(c, en, completes, z),
-//       text(")("),
-//       dom_of_term(e),
-//       text(")"),
-//     ])
-//   | RAp(e, z) =>
-//     oneline([
-//       text("("),
-//       dom_of_term(e),
-//       text(")("),
-//       dom_of_zterm(c, en, completes, z),
-//       text(")"),
-//     ])
-//   | XLet(x, t, e1, e2) =>
-//     let c' = extend_context_name(name_of_zname(x), t, c);
-//     let en' = maybe_extend_env_name(name_of_zname(x), e1, en);
-//     let completes' =
-//       extend_complete_list_let(name_of_zname(x), t, e1, completes);
-//     sub_block(
-//       [
-//         check_let(c, en, t, completes, e1)
-//           ? Node.text("🟩") : Node.text(""),
-//         dom_of_zname(x),
-//         text(":"),
-//         dom_of_term(t),
-//         text("←"),
-//       ],
-//       dom_of_term(e1),
-//       dom_of_term(c', en', completes', e2),
-//     );
-//   | TLet(x, t, e1, e2) =>
-//     let c' = extend_context_name(x, term_of_zterm(t), c);
-//     let en' = maybe_extend_env_name(x, e1, en);
-//     let completes' =
-//       extend_complete_list_let(x, term_of_zterm(t), e1, completes);
-//     sub_block(
-//       [
-//         check_let(c, en, term_of_zterm(t), completes, e1)
-//           ? Node.text("🟩") : Node.text(""),
-//         dom_of_name(x),
-//         text(":"),
-//         dom_of_zterm(c, en, completes, t),
-//         text("←"),
-//       ],
-//       dom_of_term(e1),
-//       dom_of_term(c', en', completes', e2),
-//     );
-//   | E1Let(x, t, e1, e2) =>
-//     let c' = extend_context_name(x, t, c);
-//     let en' = maybe_extend_env_name(x, term_of_zterm(e1), en);
-//     let completes' =
-//       extend_complete_list_let(x, t, term_of_zterm(e1), completes);
-//     sub_block(
-//       [
-//         check_let(c, en, t, completes, term_of_zterm(e1))
-//           ? Node.text("🟩") : Node.text(""),
-//         dom_of_name(x),
-//         text(":"),
-//         dom_of_term(t),
-//         text("←"),
-//       ],
-//       dom_of_zterm(c, en, completes, e1),
-//       dom_of_term(c', en', completes', e2),
-//     );
-//   | E2Let(x, t, e1, e2) =>
-//     let c' = extend_context_name(x, t, c);
-//     let en' = maybe_extend_env_name(x, e1, en);
-//     let completes' = extend_complete_list_let(x, t, e1, completes);
-//     sub_block(
-//       [
-//         check_let(c, en, t, completes, e1)
-//           ? Node.text("🟩") : Node.text(""),
-//         dom_of_name(x),
-//         text(":"),
-//         dom_of_term(t),
-//         text("←"),
-//       ],
-//       dom_of_term(e1),
-//       dom_of_zterm(c', en', completes', e2),
-//     );
-//   };
-// };
 
 let string_of_name = (x: name): string =>
   switch (x) {

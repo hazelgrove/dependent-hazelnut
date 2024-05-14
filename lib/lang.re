@@ -48,6 +48,7 @@ let default_info: info = {
   syn: None,
   cursed: false,
   name_cursed: false,
+  cursor_inside: false,
 };
 
 let default_hole: term = Hole({i: default_info});
@@ -121,75 +122,33 @@ let set_info = (e: term, i): term =>
   | Let(r) => Let({...r, i})
   };
 
-let string_of_name = (x: name): string =>
-  switch (x) {
-  | Hole => "Hole"
-  | Text(x) => "Text(\"" ++ x ++ "\")"
-  };
-
-// let rec string_of_mark = (m: mark): string =>
-//   switch (m) {
-//   | UnknownVar(x) => "UnknownVar(\"" ++ x ++ "\")"
-//   | FunNotArrow(t) => "FunNotArrow(" ++ string_of_pterm(t) ++ ")"
-//   | Mismatch(t1, t2) =>
-//     " Mismatch(" ++ string_of_pterm(t1) ++ "," ++ string_of_pterm(t2) ++ ")"
-//   | NotTyp(t) => "NotTyp(" ++ string_of_pterm(t) ++ ")"
-// }
-
-let rec string_of_pterm = (e: pterm): string =>
-  switch (e) {
-  | Hole => "Hole"
-  | Typ => "Typ"
-  | Var(x) => "Var(\"" ++ x ++ "\")"
-  | Arrow(x, t1, t2) =>
-    "Arrow("
-    ++ string_of_name(x)
-    ++ ","
-    ++ string_of_pterm(t1)
-    ++ ","
-    ++ string_of_pterm(t2)
-    ++ ")"
-  | Fun(x, t, e) =>
-    "Fun("
-    ++ string_of_name(x)
-    ++ ","
-    ++ string_of_pterm(t)
-    ++ ","
-    ++ string_of_pterm(e)
-    ++ ")"
-  | Ap(e1, e2) =>
-    "Ap(" ++ string_of_pterm(e1) ++ "," ++ string_of_pterm(e2) ++ ")"
-  | Let(x, t, e1, e2) =>
-    "Let("
-    ++ string_of_name(x)
-    ++ ","
-    ++ string_of_pterm(t)
-    ++ ","
-    ++ string_of_pterm(e1)
-    ++ ","
-    ++ string_of_pterm(e2)
-    ++ ")"
-  };
-
 let rec place_cursor = (z: zterm, e: term): term => {
-  print_endline(string_of_pterm(pterm_of_zterm(z)));
-  // let curse = (i: info) => {...i, cursed: true};
   let name_curse = (i: info) => {...i, name_cursed: true};
+  let curse_inside = (i: info) => {...i, cursor_inside: true};
   switch (z, e) {
   | (Cursor(_), e) => set_info(e, {...get_info(e), cursed: true})
   | (z, Mark(r)) => Mark({...r, e: place_cursor(z, r.e)})
   | (XArrow(_, _, _), Arrow(r)) => Arrow({...r, i: name_curse(r.i)})
-  | (LArrow(_, z, _), Arrow(r)) => Arrow({...r, t1: place_cursor(z, r.t1)})
-  | (RArrow(_, _, z), Arrow(r)) => Arrow({...r, t2: place_cursor(z, r.t2)})
+  | (LArrow(_, z, _), Arrow(r)) =>
+    Arrow({...r, i: curse_inside(r.i), t1: place_cursor(z, r.t1)})
+  | (RArrow(_, _, z), Arrow(r)) =>
+    Arrow({...r, i: curse_inside(r.i), t2: place_cursor(z, r.t2)})
   | (XFun(_, _, _), Fun(r)) => Fun({...r, i: name_curse(r.i)})
-  | (TFun(_, z, _), Fun(r)) => Fun({...r, t: place_cursor(z, r.t)})
-  | (EFun(_, _, z), Fun(r)) => Fun({...r, e: place_cursor(z, r.e)})
-  | (LAp(z, _), Ap(r)) => Ap({...r, e1: place_cursor(z, r.e1)})
-  | (RAp(_, z), Ap(r)) => Ap({...r, e2: place_cursor(z, r.e2)})
+  | (TFun(_, z, _), Fun(r)) =>
+    Fun({...r, i: curse_inside(r.i), t: place_cursor(z, r.t)})
+  | (EFun(_, _, z), Fun(r)) =>
+    Fun({...r, i: curse_inside(r.i), e: place_cursor(z, r.e)})
+  | (LAp(z, _), Ap(r)) =>
+    Ap({...r, i: curse_inside(r.i), e1: place_cursor(z, r.e1)})
+  | (RAp(_, z), Ap(r)) =>
+    Ap({...r, i: curse_inside(r.i), e2: place_cursor(z, r.e2)})
   | (XLet(_, _, _, _), Let(r)) => Let({...r, i: name_curse(r.i)})
-  | (TLet(_, z, _, _), Let(r)) => Let({...r, t: place_cursor(z, r.t)})
-  | (E1Let(_, _, z, _), Let(r)) => Let({...r, e1: place_cursor(z, r.e1)})
-  | (E2Let(_, _, _, z), Let(r)) => Let({...r, e2: place_cursor(z, r.e2)})
+  | (TLet(_, z, _, _), Let(r)) =>
+    Let({...r, i: curse_inside(r.i), t: place_cursor(z, r.t)})
+  | (E1Let(_, _, z, _), Let(r)) =>
+    Let({...r, i: curse_inside(r.i), e1: place_cursor(z, r.e1)})
+  | (E2Let(_, _, _, z), Let(r)) =>
+    Let({...r, i: curse_inside(r.i), e2: place_cursor(z, r.e2)})
   | _ => failwith("term misalignment")
   };
 };
@@ -241,158 +200,6 @@ let rec lookup = (x: string, c: context) => {
   | [_, ...c] => lookup(x, c)
   };
 };
-
-// let rec term_of_pure_term = (e: pure_term): term => {
-//   let e' =
-//     switch (e) {
-//     | Hole => Hole
-//     | Typ => Typ
-//     | Var(x) => Var(x)
-//     | Arrow(x, t1, t2) =>
-//       Arrow(x, t1), t2))
-//     | Fun(x, t, e) => Fun(x, t), e))
-//     | Ap(e1, e2) => Ap(e1), e2))
-//     | Let(x, t, e1, e2) =>
-//       Let(
-//         x,
-//         t),
-//         e1),
-//         e2),
-//       )
-//     };
-//   e');
-// };
-// let rec term_of_zterm = (z: zterm): term => {
-//   switch (z) {
-//   | Cursor(t) => t)
-//   | XArrow(z, t1, t2) =>
-//     Info(
-//       None,
-//       Arrow(
-//         name_of_zname(z),
-//         t1),
-//         t2),
-//       ),
-//     )
-//   | LArrow(x, z, t) =>
-//     Arrow(x, term_of_zterm(z), t)))
-//   | RArrow(x, t, z) =>
-//     Arrow(x, t), term_of_zterm(z)))
-//   | XFun(z, t, e) =>
-//     Info(
-//       None,
-//       Fun(name_of_zname(z), t), e)),
-//     )
-//   | TFun(x, z, e) =>
-//     Fun(x, term_of_zterm(z), e)))
-//   | EFun(x, t, z) =>
-//     Fun(x, t), term_of_zterm(z)))
-//   | LAp(z, e) => Ap(term_of_zterm(z), e)))
-//   | RAp(e, z) => Ap(e), term_of_zterm(z)))
-//   | XLet(z, t, e1, e2) =>
-//     Info(
-//       None,
-//       Let(
-//         name_of_zname(z),
-//         t),
-//         e1),
-//         e2),
-//       ),
-//     )
-//   | TLet(x, z, e1, e2) =>
-//     Info(
-//       None,
-//       Let(
-//         x,
-//         term_of_zterm(z),
-//         e1),
-//         e2),
-//       ),
-//     )
-//   | E1Let(x, t, z, e2) =>
-//     Info(
-//       None,
-//       Let(
-//         x,
-//         t),
-//         term_of_zterm(z),
-//         e2),
-//       ),
-//     )
-//   | E2Let(x, t, e1, z) =>
-//     Info(
-//       None,
-//       Let(
-//         x,
-//         t),
-//         e1),
-//         term_of_zterm(z),
-//       ),
-//     )
-//   };
-// };
-
-// let rec term_at_cursor = (z: zterm) =>
-//   switch (z) {
-//   | Cursor(e) => Some(e)
-//   | XArrow(_, _, _) => None
-//   | LArrow(_, z, _)
-//   | RArrow(_, _, z) => term_at_cursor(z)
-//   | XFun(_, _, _) => None
-//   | TFun(_, z, _)
-//   | EFun(_, _, z)
-//   | LAp(z, _)
-//   | RAp(_, z) => term_at_cursor(z)
-//   | XLet(_, _, _, _) => None
-//   | TLet(_, z, _, _)
-//   | E1Let(_, _, z, _)
-//   | E2Let(_, _, _, z) => term_at_cursor(z)
-//   };
-
-let complete_name = (x: name) =>
-  switch (x) {
-  | Hole => false
-  | Text(_) => true
-  };
-
-// let rec extend_complete_list_let = (x, t, e, c) =>
-//   complete_term(t) && complete_term(e) ? extend_list_name(x, c) : c
-// and complete_plain_term = (c: list(string), e: plain_term) =>
-//   switch (e) {
-//   | Hole
-//   | Mark(_, _) => false
-//   | Var(x) => List.mem(x, c)
-//   | Typ => true
-//   | Arrow(x, t1, t2) =>
-//     complete_term(t1) && complete_term(t2)
-//   | Fun(x, t, e) =>
-//     complete_name(x)
-//     && complete_term(t)
-//     && complete_term(e)
-//   | Ap(e1, e2) => complete_term(e1) && complete_term(e2)
-//   | Let(x, t, e1, e2) =>
-//     complete_term(e2)
-//   }
-// and complete_term = (e: term) =>
-//   switch (e) {
-//   | Info(i, e) => complete_plain_term(e)
-//   };
-
-// let extend_complete_list_fun = (x, t, c) =>
-//   complete_term(t) ? extend_list_name(x, c) : c;
-
-// let rec no_holes_term = (e: term) =>
-//   switch (e) {
-//   | Hole
-//   | Mark(_, _) => false
-//   | Var(_)
-//   | Typ => true
-//   | Arrow(_, t1, t2) => no_holes_term(t1) && no_holes_term(t2)
-//   | Fun(x, t, e) =>
-//     complete_name(x) && no_holes_term(t) && no_holes_term(e)
-//   | Ap(e1, e2) => no_holes_term(e1) && no_holes_term(e2)
-//   | Let(_, _, _, e2) => no_holes_term(e2)
-//   };
 
 // SECTION: CONSISTENCY, MATCHING, AND REDUCTION
 
@@ -489,6 +296,41 @@ let rec head_consist = (en: env, t1, t2: term): bool => {
 and consist = (en: env, t1, t2: term): bool => {
   let (t1', t2') = (head_reduce(en, t1), head_reduce(en, t2));
   head_consist(en, t1', t2');
+};
+
+// Structural equality
+
+let names_equal = (x1, x2: name): bool => {
+  switch (x1: name, x2) {
+  | (Hole, Hole) => true
+  | (Text(x1), Text(x2)) => x1 == x2
+  | _ => false
+  };
+};
+
+let rec terms_equal = (t1, t2: term): bool => {
+  switch (t1: term, t2: term) {
+  | (Hole(_), Hole(_))
+  | (Typ(_), Typ(_)) => true
+  | (Mark(r1), Mark(r2)) when r1.m == r2.m => terms_equal(r1.e, r2.e)
+  | (Var(r1), Var(r2)) => r1.x == r2.x
+  | (Arrow(r1), Arrow(r2)) =>
+    names_equal(r1.x, r2.x)
+    && terms_equal(r1.t1, r2.t1)
+    && terms_equal(r1.t2, r2.t2)
+  | (Fun(r1), Fun(r2)) =>
+    names_equal(r1.x, r1.x)
+    && terms_equal(r1.t, r2.t)
+    && terms_equal(r1.e, r2.e)
+  | (Ap(r1), Ap(r2)) =>
+    terms_equal(r1.e1, r2.e1) && terms_equal(r1.e2, r2.e2)
+  | (Let(r1), Let(r2)) =>
+    names_equal(r1.x, r2.x)
+    && terms_equal(r1.t, r2.t)
+    && terms_equal(r1.e1, r2.e1)
+    && terms_equal(r1.e2, r2.e2)
+  | _ => false
+  };
 };
 
 // Matched Set type. Invariant: either returns None or Some(Typ(_))
@@ -654,7 +496,14 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
     | Some(Arrow(r2)) =>
       if (consist_name(r1.x, r2.x) && consist(cs.en, r1.t, r2.t1)) {
         let t = syn(cs, r1.t);
-        let cs = {...cs, c: extend_context_name(r1.x, r1.t, cs.c)};
+        let tt = get_info(t).syn;
+        let (cs, t: term) =
+          switch (Option.bind(tt, typ_of_term)) {
+          | None =>
+            let i = {...i, syn: Some(default_hole)};
+            (cs, Mark({i, m: NotTyp(tt), e: t}));
+          | Some(_) => ({...cs, c: extend_context_name(r1.x, t, cs.c)}, t)
+          };
         // Missing: Update completes
         let e = ana(cs, r2.t2, r1.e);
         Fun({...r1, i, t, e});
@@ -681,165 +530,3 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
   | _ => subsume()
   };
 };
-
-// // Precondition: z and e are the same except z has a cursor and e has marks.
-// // Returns the expression with both the cursor and the marks.
-// let rec mark_merge = (z: zterm, e: term): zterm =>
-//   switch (z, e) {
-//   | (Cursor(_), e') => Cursor(e')
-//   | (z, Mark(m, e)) => Mark(m, mark_merge(z, e))
-//   | (XArrow(z, _, _), Arrow(_, t1, t2)) => XArrow(z, t1, t2)
-//   | (LArrow(_, z, _), Arrow(x, t1, t2)) =>
-//     LArrow(x, mark_merge(z, t1), t2)
-//   | (RArrow(_, _, z), Arrow(x, t1, t2)) =>
-//     RArrow(x, t1, mark_merge(z, t2))
-//   | (XFun(z, _, _), Fun(_, t, e)) => XFun(z, t, e)
-//   | (TFun(_, z, _), Fun(x, t, e)) => TFun(x, mark_merge(z, t), e)
-//   | (EFun(_, _, z), Fun(x, t, e)) => EFun(x, t, mark_merge(z, e))
-//   | (LAp(z, _), Ap(e1, e2)) => LAp(mark_merge(z, e1), e2)
-//   | (RAp(_, z), Ap(e1, e2)) => RAp(e1, mark_merge(z, e2))
-//   | (XLet(z, _, _, _), Let(_, t, e1, e2)) => XLet(z, t, e1, e2)
-//   | (TLet(_, z, _, _), Let(x, t, e1, e2)) =>
-//     TLet(x, mark_merge(z, t), e1, e2)
-//   | (E1Let(_, _, z, _), Let(x, t, e1, e2)) =>
-//     E1Let(x, t, mark_merge(z, e1), e2)
-//   | (E2Let(_, _, _, z), Let(x, t, e1, e2)) =>
-//     E2Let(x, t, e1, mark_merge(z, e2))
-//   | _ => failwith("merge mismatch")
-//   };
-// // Returns the complete context (list of vars that are completely defined)
-// // at the cursor (appended to the argument c)
-// let rec local_complete_list = (c: list(string), z: zterm) =>
-//   switch (z) {
-//   | Cursor(_) => c
-//   | Mark(_, z) => local_complete_list(c, z)
-//   | XArrow(_, _, _) => c
-//   | LArrow(_, z, _) => local_complete_list(c, z)
-//   | RArrow(x, t, z) =>
-//     let c' = extend_complete_list_fun(x, t, c);
-//     local_complete_list(c', z);
-//   | XFun(_, _, _) => c
-//   | TFun(_, z, _) => local_complete_list(c, z)
-//   | EFun(x, t, z) =>
-//     let c' = extend_complete_list_fun(x, t, c);
-//     local_complete_list(c', z);
-//   | LAp(z, _)
-//   | RAp(_, z) => local_complete_list(c, z)
-//   | XLet(_, _, _, _) => c
-//   | TLet(_, z, _, _) => local_complete_list(c, z)
-//   | E1Let(_, _, z, _) => local_complete_list(c, z)
-//   | E2Let(x, t, e, z) =>
-//     let c' = extend_complete_list_let(x, t, e, c);
-//     local_complete_list(c', z);
-//   };
-// // Whether a let should get a green box next to it
-// let check_let = (c, en, t, completes, e1) =>
-//   switch (syn(c, en, e1)) {
-//   | (_, t') =>
-//     complete_term(completes, t)
-//     && complete_term(completes, e1)
-//     && consist(en, t, t')
-//   };
-// // Returns the context at the cursor (appended to the argument c)
-// let rec local_context = (c: context, z: zterm) =>
-//   switch (z) {
-//   | Cursor(_) => c
-//   | Mark(_, z) => local_context(c, z)
-//   | XArrow(_, _, _) => c
-//   | LArrow(_, z, _) => local_context(c, z)
-//   | RArrow(x, t1, z) =>
-//     let c' = extend_context_name(x, t1, c);
-//     local_context(c', z);
-//   | XFun(_, _, _) => c
-//   | TFun(_, z, _) => local_context(c, z)
-//   | EFun(x, t, z) =>
-//     let c' = extend_context_name(x, t, c);
-//     local_context(c', z);
-//   | LAp(z, _)
-//   | RAp(_, z) => local_context(c, z)
-//   | XLet(_, _, _, _) => c
-//   | TLet(_, z, _, _) => local_context(c, z)
-//   | E1Let(_, _, z, _) => local_context(c, z)
-//   | E2Let(x, t, _, z) =>
-//     let c' = extend_context_name(x, t, c);
-//     local_context(c', z);
-//   };
-// let rec local_env = (en: env, z: zterm) =>
-//   switch (z) {
-//   | Cursor(_) => en
-//   | Mark(_, z) => local_env(en, z)
-//   | XArrow(_, _, _) => en
-//   | LArrow(_, z, _)
-//   | RArrow(_, _, z) => local_env(en, z)
-//   | XFun(_, _, _) => en
-//   | TFun(_, z, _)
-//   | EFun(_, _, z) => local_env(en, z)
-//   | LAp(z, _)
-//   | RAp(_, z) => local_env(en, z)
-//   | XLet(_, _, _, _) => en
-//   | TLet(_, z, _, _)
-//   | E1Let(_, _, z, _) => local_env(en, z)
-//   | E2Let(x, _, e, z) =>
-//     let en' = maybe_extend_env_name(x, e, en);
-//     local_env(en', z);
-//   };
-// // Returns the expected type at the cursor, if the argument's expected type is g
-// // Keeps the goal reduced
-// let rec local_goal = (c: context, en: env, g: term, z: zterm) => {
-//   switch (z) {
-//   | Cursor(_) => g
-//   | Mark(_, z) => local_goal(c, en, g, z)
-//   | XArrow(_, _, _) => g
-//   | LArrow(_, _, _) => Typ
-//   | RArrow(x, t1, z) =>
-//     let c' = extend_context_name(x, t1, c);
-//     local_goal(c', en, g, z);
-//   | XFun(_, _, _) => g
-//   | TFun(_, _, _) => Typ
-//   | EFun(x, t, z) =>
-//     let c' = extend_context_name(x, t, c);
-//     let g' =
-//       switch (arrow_of_term(g)) {
-//       | Some((y, _, t')) when consist_name(x, y) => reduce(en, t')
-//       | _ => Hole
-//       };
-//     local_goal(c', en, g', z);
-//   | LAp(z, e) =>
-//     let (_, g') = syn(c, en, e);
-//     let g' = reduce(en, g');
-//     local_goal(c, en, Arrow(Hole, g', g), z);
-//   | RAp(e, z) =>
-//     let g': term =
-//       switch (syn(c, en, e)) {
-//       | (_, Arrow(_, g', _)) => reduce(en, g')
-//       | _ => Hole
-//       };
-//     local_goal(c, en, g', z);
-//   | XLet(_, _, _, _) => g
-//   | TLet(_, _, _, _) => Typ
-//   | E1Let(_, t, z, _) => local_goal(c, en, t, z)
-//   | E2Let(x, t, e, z) =>
-//     let c' = extend_context_name(x, t, c);
-//     let en' = maybe_extend_env_name(x, e, en);
-//     local_goal(c', en', g, z);
-//   };
-// };
-// // Returns the marks at the cursor
-// let rec local_marks = (z: zterm): list(mark) =>
-//   switch (z) {
-//   | Cursor(Mark(m, e)) => [m, ...local_marks(Cursor(e))]
-//   | Cursor(_) => []
-//   | Mark(_, z) => local_marks(z)
-//   | XArrow(_, _, _) => []
-//   | LArrow(_, z, _)
-//   | RArrow(_, _, z) => local_marks(z)
-//   | XFun(_, _, _) => []
-//   | TFun(_, z, _)
-//   | EFun(_, _, z) => local_marks(z)
-//   | LAp(z, _)
-//   | RAp(_, z) => local_marks(z)
-//   | XLet(_, _, _, _) => []
-//   | TLet(_, z, _, _)
-//   | E1Let(_, _, z, _)
-//   | E2Let(_, _, _, z) => local_marks(z)
-//   };
