@@ -160,84 +160,74 @@ let library =
                   Text("y"),
                   Var("A"),
                   Let(
-                    Text("Px"),
-                    Arrow(Text("x"), Var("A"), Typ),
-                    Fun(
-                      Text("x"),
-                      Var("A"),
-                      Arrow(
-                        Text("y"),
+                    Text("M"),
+                    Typ,
+                    Ap(
+                      Ap(Var("exists"), Var("A")),
+                      Fun(
+                        Text("x"),
                         Var("A"),
                         Ap(Ap(Var("P"), Var("x")), Var("y")),
                       ),
                     ),
                     Let(
-                      Text("go"),
-                      Arrow(
-                        Text("a"),
+                      Text("Px"),
+                      Arrow(Text("x"), Var("A"), Typ),
+                      Fun(
+                        Text("x"),
                         Var("A"),
                         Arrow(
-                          Text("p"),
-                          Arrow(
-                            Text("y"),
-                            Var("A"),
-                            Ap(Ap(Var("P"), Var("a")), Var("y")),
-                          ),
-                          Ap(
-                            Ap(Var("exists"), Var("A")),
-                            Fun(
-                              Text("x"),
-                              Var("A"),
-                              Ap(Ap(Var("P"), Var("x")), Var("y")),
-                            ),
-                          ),
+                          Text("y"),
+                          Var("A"),
+                          Ap(Ap(Var("P"), Var("x")), Var("y")),
                         ),
                       ),
-                      Fun(
-                        Text("a"),
-                        Var("A"),
-                        Fun(
-                          Text("p"),
+                      Let(
+                        Text("go"),
+                        Arrow(
+                          Text("a"),
+                          Var("A"),
                           Arrow(
-                            Text("y"),
-                            Var("A"),
-                            Ap(Ap(Var("P"), Var("a")), Var("y")),
+                            Text("p"),
+                            Ap(Var("Px"), Var("a")),
+                            Var("M"),
                           ),
-                          Ap(
+                        ),
+                        Fun(
+                          Text("a"),
+                          Var("A"),
+                          Fun(
+                            Text("p"),
+                            Ap(Var("Px"), Var("a")),
                             Ap(
                               Ap(
-                                Ap(Var("exists-con"), Var("A")),
-                                Fun(
-                                  Text("x"),
-                                  Var("A"),
-                                  Ap(Ap(Var("P"), Var("x")), Var("y")),
+                                Ap(
+                                  Ap(Var("exists-con"), Var("A")),
+                                  Fun(
+                                    Text("x"),
+                                    Var("A"),
+                                    Ap(Ap(Var("P"), Var("x")), Var("y")),
+                                  ),
                                 ),
+                                Var("a"),
                               ),
-                              Var("a"),
+                              Ap(Var("p"), Var("y")),
                             ),
-                            Ap(Var("p"), Var("y")),
                           ),
                         ),
-                      ),
-                      Ap(
                         Ap(
                           Ap(
                             Ap(
-                              Ap(Var("exists-rec"), Var("A")),
-                              Var("Px"),
-                            ),
-                            Ap(
-                              Ap(Var("exists"), Var("A")),
-                              Fun(
-                                Text("x"),
-                                Var("A"),
-                                Ap(Ap(Var("P"), Var("x")), Var("y")),
+                              Ap(
+                                Ap(Var("exists-rec"), Var("A")),
+                                Var("Px"),
                               ),
+                              Var("M"),
                             ),
+                            Var("go"),
                           ),
-                          Var("go"),
+                          Var("f1"),
                         ),
-                        Var("f1"),
                       ),
                     ),
                   ),

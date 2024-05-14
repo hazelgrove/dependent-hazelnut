@@ -1,8 +1,7 @@
 Todos:
 - Capture avoiding substitution
 - Alpha equivalence 
-- Improved delta reduction 
-- Better normalization in goal, context, checking, etc
+- Eta equivalence
 - Basic type hole inference
 - Fix Type : Type
 
