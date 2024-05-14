@@ -636,6 +636,9 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
   let i = {...i, goal: Some(ana_t)};
   let subsume = () => {
     let e = syn(cs, e);
+    let i = get_info(e);
+    let i = {...i, goal: Some(ana_t)};
+    let e = set_info(e, i);
     let t = Option.get(get_info(e).syn);
     if (consist(cs.en, ana_t, t)) {
       e;
