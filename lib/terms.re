@@ -32,7 +32,7 @@ type zterm =
 
 type info = {
   c: context,
-  completes: list(term),
+  // completes: list(term),
   en: env,
   goal: option(term),
   syn: option(term),

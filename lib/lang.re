@@ -305,7 +305,7 @@ and consist = (en: env, t1, t2: term): bool => {
 
 let default_info: info = {
   c: [],
-  completes: [],
+  // completes: [],
   en: [],
   goal: None,
   syn: None,
@@ -343,7 +343,12 @@ type contexts = {
 };
 
 let store_contexts = (cs: contexts, i: info): info => {
-  {...i, c: cs.c, completes: cs.completes, en: cs.en};
+  {
+    ...i,
+    c: cs.c,
+    // completes:  cs.completes,
+    en: cs.en,
+  };
 };
 
 let get_info = (e: term): info =>
@@ -392,6 +397,7 @@ let rec syn = (cs: contexts, e: term): term => {
         (cs, Mark({i, m: NotTyp(t1t), e: t1'}));
       | Some(_) => ({...cs, c: extend_context_name(r.x, t1', cs.c)}, t1')
       };
+    // Missing: Update completes
     let t2' = syn(cs, r.t2);
     let t2t = get_info(t2').syn;
     let t2'': term =
@@ -413,6 +419,7 @@ let rec syn = (cs: contexts, e: term): term => {
         (cs, Mark({i, m: NotTyp(tt), e: t}));
       | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t)
       };
+    // Missing: Update completes
     let e = syn(cs, r.e);
     let et = get_info(e).syn;
     let syn =
@@ -450,6 +457,7 @@ let rec syn = (cs: contexts, e: term): term => {
       };
     let e1 = ana(cs, ana1, r.e1);
     let cs = {...cs, en: maybe_extend_env_name(r.x, e1, cs.en)};
+    // Missing: Update completes
     let e2 = syn(cs, r.e2);
     let syn = get_info(e2).syn;
     let i = {...i, syn};
@@ -478,6 +486,7 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
       if (consist_name(r1.x, r2.x) && consist(cs.en, r1.t, r2.t1)) {
         let t = syn(cs, r1.t);
         let cs = {...cs, c: extend_context_name(r1.x, r1.t, cs.c)};
+        // Missing: Update completes
         let e = ana(cs, r2.t2, r1.e);
         Fun({...r1, i, t, e});
       } else {
@@ -497,6 +506,7 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
       };
     let e1 = ana(cs, ana1, r.e1);
     let cs = {...cs, en: maybe_extend_env_name(r.x, e1, cs.en)};
+    // Missing: Update completes
     let e2 = ana(cs, ana_t, r.e2);
     Let({...r, i, t, e1, e2});
   | _ => subsume()
