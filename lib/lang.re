@@ -410,7 +410,7 @@ let rec syn = (cs: contexts, e: term): term => {
       let i = {...i, syn: Some(default_hole)};
       Mark({i, m: UnknownVar(r.x), e: Var({...r, i})});
     | Some(t) =>
-      let i = {...i, syn: Some(t)};
+      let i = {...i, syn: Some(head_reduce(cs.en, t))};
       Var({...r, i});
     }
   | Arrow(r) =>
@@ -465,8 +465,8 @@ let rec syn = (cs: contexts, e: term): term => {
       let e2 = ana(cs, default_hole, r.e2);
       Ap({i, e1, e2});
     | Some(Arrow(r1)) =>
-      let e2 = ana(cs, r1.t1, r.e2);
-      let syn = Some(sub_name(r1.x, e2, r1.t2));
+      let e2 = ana(cs, head_reduce(cs.en, r1.t1), r.e2);
+      let syn = Some(head_reduce(cs.en, sub_name(r1.x, e2, r1.t2)));
       let i = {...i, syn};
       Ap({i, e1, e2});
     | Some(_) => failwith("impossible")
@@ -481,12 +481,13 @@ let rec syn = (cs: contexts, e: term): term => {
         (cs, Mark({i, m: NotTyp(tt), e: t}), default_hole);
       | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t, t)
       };
-    let e1 = ana(cs, ana1, r.e1);
+    let e1 = ana(cs, head_reduce(cs.en, ana1), r.e1);
     let cs2 = {...cs2, en: maybe_extend_env_name(r.x, e1, cs.en)};
     // Missing: Update completes
     let e2 = syn(cs2, r.e2);
     let syn = get_info(e2).syn;
     let syn = Option.map(sub_name(r.x, e1), syn); // Delta reduce synthesized type as it leaves the scope of the let binding
+    let syn = Option.map(head_reduce(cs.en), syn);
     let i = {...i, syn};
     Let({...r, i, t, e1, e2});
   };
@@ -523,10 +524,16 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
           | None =>
             let i = {...i, syn: Some(default_hole)};
             (cs, Mark({i, m: NotTyp(tt), e: t}));
-          | Some(_) => ({...cs, c: extend_context_name(r1.x, t, cs.c)}, t)
+          | Some(_) => (
+              {
+                ...cs,
+                c: extend_context_name(r1.x, head_reduce(cs.en, t), cs.c),
+              },
+              t,
+            )
           };
         // Missing: Update completes
-        let e = ana(cs, r2.t2, r1.e);
+        let e = ana(cs, head_reduce(cs.en, r2.t2), r1.e);
         Fun({...r1, i, t, e});
       } else {
         subsume();
@@ -543,7 +550,7 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
         (cs, Mark({i, m: NotTyp(tt), e: t}), default_hole);
       | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t, t)
       };
-    let e1 = ana(cs, ana1, r.e1);
+    let e1 = ana(cs, head_reduce(cs.en, ana1), r.e1);
     let cs2 = {...cs2, en: maybe_extend_env_name(r.x, e1, cs.en)};
     // Missing: Update completes
     let e2 = ana(cs2, ana_t, r.e2);
