@@ -1,7 +1,9 @@
 Todos:
 - Capture avoiding substitution
-- More beta and delta normalization in goal, context, checking, etc
-- Auto can fill inferrable arguments
+- Alpha equivalence 
+- Improved delta reduction 
+- Better normalization in goal, context, checking, etc
+- Basic type hole inference
 - Fix Type : Type
 
 - Better editing flow

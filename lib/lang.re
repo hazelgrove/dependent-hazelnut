@@ -469,7 +469,7 @@ let rec syn = (cs: contexts, e: term): term => {
   | Let(r) =>
     let t = syn(cs, r.t);
     let tt = get_info(t).syn;
-    let (cs, t: term, ana1) =
+    let (cs2, t: term, ana1) =
       switch (Option.bind(tt, typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
@@ -477,9 +477,9 @@ let rec syn = (cs: contexts, e: term): term => {
       | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t, t)
       };
     let e1 = ana(cs, ana1, r.e1);
-    let cs = {...cs, en: maybe_extend_env_name(r.x, e1, cs.en)};
+    let cs2 = {...cs2, en: maybe_extend_env_name(r.x, e1, cs.en)};
     // Missing: Update completes
-    let e2 = syn(cs, r.e2);
+    let e2 = syn(cs2, r.e2);
     let syn = get_info(e2).syn;
     let i = {...i, syn};
     Let({...r, i, t, e1, e2});
@@ -528,7 +528,7 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
   | Let(r) =>
     let t = syn(cs, r.t);
     let tt = get_info(t).syn;
-    let (cs, t: term, ana1) =
+    let (cs2, t: term, ana1) =
       switch (Option.bind(tt, typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
@@ -536,9 +536,10 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
       | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t, t)
       };
     let e1 = ana(cs, ana1, r.e1);
-    let cs = {...cs, en: maybe_extend_env_name(r.x, e1, cs.en)};
+    let cs2 = {...cs2, en: maybe_extend_env_name(r.x, e1, cs.en)};
     // Missing: Update completes
-    let e2 = ana(cs, ana_t, r.e2);
+    let e2 = ana(cs2, ana_t, r.e2);
+    // let i = {...i, syn: get_info(e2).syn};
     Let({...r, i, t, e1, e2});
   | _ => subsume()
   };
