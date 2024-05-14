@@ -5,13 +5,7 @@ open Terms;
 open Lang;
 open Lang_viz;
 
-let dom_of_state = (z: zterm) => {
-  let initial_contexts: contexts = {c: [], en: []};
-  let p = pterm_of_zterm(z);
-  let e = syn(initial_contexts, term_of_pterm(p));
-  // let e = place_cursor(z, e);
-
-  let e' = term_at_cursor(z, e);
+let dom_of_state = (z: zterm, e: term, e': term) => {
   let i = get_info(e');
 
   let cursed_e = place_cursor(z, e);

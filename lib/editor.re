@@ -66,7 +66,7 @@ let rec apply_zname = (a: edit_action, z: zname): zname => {
   | _ => z
   };
 };
-let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
+let rec apply_zterm = (a: edit_action, z: zterm, ec: term): zterm => {
   switch (a, z) {
   | (Delete, Cursor(_)) => Cursor(Hole)
   | (NextHole, z) =>
@@ -98,17 +98,15 @@ let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
   // | (MakeLet, Cursor(Hole)) => XLet(Cursor(Hole), Hole, Hole, Hole)
   | (TextAction, Cursor(Var(x))) =>
     switch (edit_action_of_text(x)) {
-    | Some(a') => apply_zterm(a', Cursor(Hole))
-    | None => apply_zterm(MakeAp, z)
+    | Some(a') => apply_zterm(a', Cursor(Hole), ec)
+    | None => apply_zterm(MakeAp, z, ec)
     }
-  | (TextAction, Cursor(_)) => apply_zterm(MakeAp, z)
+  | (TextAction, Cursor(_)) => apply_zterm(MakeAp, z, ec)
   | (GiveTerm(e), z) => give_term(z, e)
   | (FillVar, z) =>
     print_endline("not implemented");
     z; //fill_var(z)
-  | (Refine, z) =>
-    print_endline("not implemented");
-    z; //refine(z)
+  | (Refine, z) => refine(z, ec)
   | (MakeLemma, z) =>
     print_endline("not implemented");
     z; //make_lemma(z)
@@ -158,17 +156,17 @@ let rec apply_zterm = (a: edit_action, z: zterm): zterm => {
   // }
   // | (Auto, z) => apply_zterm(Refine, apply_zterm(FillVar, z))
   | (a, XArrow(z, t1, t2)) => XArrow(apply_zname(a, z), t1, t2)
-  | (a, LArrow(x, z, t2)) => LArrow(x, apply_zterm(a, z), t2)
-  | (a, RArrow(x, t1, z)) => RArrow(x, t1, apply_zterm(a, z))
+  | (a, LArrow(x, z, t2)) => LArrow(x, apply_zterm(a, z, ec), t2)
+  | (a, RArrow(x, t1, z)) => RArrow(x, t1, apply_zterm(a, z, ec))
   | (a, XFun(z, t, e)) => XFun(apply_zname(a, z), t, e)
-  | (a, TFun(x, z, e)) => TFun(x, apply_zterm(a, z), e)
-  | (a, EFun(x, t, z)) => EFun(x, t, apply_zterm(a, z))
-  | (a, LAp(z, e)) => LAp(apply_zterm(a, z), e)
-  | (a, RAp(e, z)) => RAp(e, apply_zterm(a, z))
+  | (a, TFun(x, z, e)) => TFun(x, apply_zterm(a, z, ec), e)
+  | (a, EFun(x, t, z)) => EFun(x, t, apply_zterm(a, z, ec))
+  | (a, LAp(z, e)) => LAp(apply_zterm(a, z, ec), e)
+  | (a, RAp(e, z)) => RAp(e, apply_zterm(a, z, ec))
   | (a, XLet(z, t, e1, e2)) => XLet(apply_zname(a, z), t, e1, e2)
-  | (a, TLet(x, z, e1, e2)) => TLet(x, apply_zterm(a, z), e1, e2)
-  | (a, E1Let(x, t, z, e2)) => E1Let(x, t, apply_zterm(a, z), e2)
-  | (a, E2Let(x, t, e1, z)) => E2Let(x, t, e1, apply_zterm(a, z))
+  | (a, TLet(x, z, e1, e2)) => TLet(x, apply_zterm(a, z, ec), e1, e2)
+  | (a, E1Let(x, t, z, e2)) => E1Let(x, t, apply_zterm(a, z, ec), e2)
+  | (a, E2Let(x, t, e1, z)) => E2Let(x, t, e1, apply_zterm(a, z, ec))
   | _ => z
   };
 };

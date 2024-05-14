@@ -63,19 +63,21 @@ let var_for_term = (c: context) => {
   "f" ++ string_of_int(next_fnum(0, c) + 1);
 };
 
-// // type directed refinement - if the goal is an arrow, instantiates the right fun
-// let refine = (z: zterm) => {
-//   switch (local_goal([], [], Hole, z)) {
-//   | Arrow(x, t, _) =>
-//     let var_name =
-//       switch (x) {
-//       | Hole => var_for_term(local_context([], z))
-//       | Text(x) => x
-//       };
-//     focus_hole(give_term(z, Fun(Text(var_name), t, Hole)));
-//   | _ => z
-//   };
-// };
+// type directed refinement - if the goal is an arrow, instantiates the right fun
+let refine = (z: zterm, ec: term) => {
+  switch (get_info(ec).goal) {
+  | Some(Arrow(r)) =>
+    let var_name =
+      switch (r.x) {
+      | Hole => var_for_term(get_info(ec).c)
+      | Text(x) => x
+      };
+    focus_hole(
+      give_term(z, Fun(Text(var_name), pterm_of_term(r.t1), Hole)),
+    );
+  | _ => z
+  };
+};
 
 let var_for_lemma = (c: context) => {
   let rec next_hnum = (acc: int, c: context) =>

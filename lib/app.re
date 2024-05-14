@@ -2,7 +2,8 @@
 open Incr_dom;
 open Js_of_ocaml;
 
-// open Lang;
+open Terms;
+open Lang;
 open Editor;
 open Editor_viz;
 
@@ -29,6 +30,8 @@ module Action = {
 module Model = {
   type t = {
     exp: state,
+    term,
+    term_at_cursor: term,
     shift: bool,
     control: bool,
   };
@@ -45,10 +48,21 @@ let ( let* ) = (x, f) => {
   Incr.bind(x, ~f);
 };
 
+let process_state = (exp: state) => {
+  let initial_contexts: contexts = {c: [], en: []};
+  let p = pterm_of_zterm(exp);
+  let term = syn(initial_contexts, term_of_pterm(p));
+  let term_at_cursor = term_at_cursor(exp, term);
+  (term, term_at_cursor);
+};
+
 let apply_action =
     (model: Model.t, action: action, _, ~schedule_action as _): Model.t => {
   switch (action) {
-  | Edit(action) => {...model, exp: apply(action, model.exp)}
+  | Edit(action) =>
+    let exp = apply(action, model.exp, model.term_at_cursor);
+    let (term, term_at_cursor) = process_state(exp);
+    {...model, exp, term, term_at_cursor};
   | Shift(b) => {...model, shift: b}
   | Control(b) => {...model, control: b}
   };
@@ -90,7 +104,7 @@ let view =
       // input,
       // exp,
       // test,
-      dom_of_state(model.exp),
+      dom_of_state(model.exp, model.term, model.term_at_cursor),
     ],
   );
 };
@@ -109,7 +123,6 @@ let create =
 };
 
 let initial_model: Model.t = {
-  exp: initial_state,
-  shift: false,
-  control: false,
+  let (term, term_at_cursor) = process_state(initial_state);
+  {exp: initial_state, term, term_at_cursor, shift: false, control: false};
 };

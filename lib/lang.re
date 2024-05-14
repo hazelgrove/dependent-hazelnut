@@ -79,6 +79,19 @@ let rec term_of_pterm = (e: pterm) =>
     })
   };
 
+let rec pterm_of_term = (e: term): pterm =>
+  switch (e) {
+  | Hole(_) => Hole
+  | Typ(_) => Typ
+  | Mark(r) => pterm_of_term(r.e)
+  | Var(r) => Var(r.x)
+  | Arrow(r) => Arrow(r.x, pterm_of_term(r.t1), pterm_of_term(r.t2))
+  | Fun(r) => Fun(r.x, pterm_of_term(r.t), pterm_of_term(r.e))
+  | Ap(r) => Ap(pterm_of_term(r.e1), pterm_of_term(r.e2))
+  | Let(r) =>
+    Let(r.x, pterm_of_term(r.t), pterm_of_term(r.e1), pterm_of_term(r.e2))
+  };
+
 let rec term_at_cursor = (z: zterm, e: term): term =>
   switch (z, e) {
   | (Cursor(_), e) => e
