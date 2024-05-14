@@ -248,6 +248,11 @@ let sub_name = (x: name, e1: term, e2: term): term => {
   };
 };
 
+// // Replaces all occurrences of x in e with the value of x in en
+// let delta_remove_occurrences = (e: term, en:env, x: string): term =>
+//   switch (e) {
+// }
+
 // Beta reduce until head is exposed, if possible
 let rec head_reduce = (en: env, e: term): term => {
   switch (e) {
@@ -412,7 +417,7 @@ let rec syn = (cs: contexts, e: term): term => {
     let t1' = syn(cs, r.t1);
     let t1t = get_info(t1').syn;
     let (cs, t1'': term) =
-      switch (Option.bind(t1t, typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(cs.en), t1t), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         (cs, Mark({i, m: NotTyp(t1t), e: t1'}));
@@ -422,7 +427,7 @@ let rec syn = (cs: contexts, e: term): term => {
     let t2' = syn(cs, r.t2);
     let t2t = get_info(t2').syn;
     let t2'': term =
-      switch (Option.bind(t2t, typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(cs.en), t2t), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         Mark({i, m: NotTyp(t2t), e: t2'});
@@ -434,7 +439,7 @@ let rec syn = (cs: contexts, e: term): term => {
     let t = syn(cs, r.t);
     let tt = get_info(t).syn;
     let (cs, t: term) =
-      switch (Option.bind(tt, typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         (cs, Mark({i, m: NotTyp(tt), e: t}));
@@ -453,7 +458,7 @@ let rec syn = (cs: contexts, e: term): term => {
   | Ap(r) =>
     let e1 = syn(cs, r.e1);
     let t1 = get_info(e1).syn;
-    switch (Option.bind(t1, arrow_of_term)) {
+    switch (Option.bind(Option.map(head_reduce(cs.en), t1), arrow_of_term)) {
     | None =>
       let i = {...i, syn: Some(default_hole)};
       let e1 = Mark({i, m: FunNotArrow(t1), e: e1});
@@ -470,7 +475,7 @@ let rec syn = (cs: contexts, e: term): term => {
     let t = syn(cs, r.t);
     let tt = get_info(t).syn;
     let (cs2, t: term, ana1) =
-      switch (Option.bind(tt, typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         (cs, Mark({i, m: NotTyp(tt), e: t}), default_hole);
@@ -481,6 +486,7 @@ let rec syn = (cs: contexts, e: term): term => {
     // Missing: Update completes
     let e2 = syn(cs2, r.e2);
     let syn = get_info(e2).syn;
+    let syn = Option.map(sub_name(r.x, e1), syn); // Delta reduce synthesized type as it leaves the scope of the let binding
     let i = {...i, syn};
     Let({...r, i, t, e1, e2});
   };
@@ -505,13 +511,15 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
   };
   switch (e) {
   | Fun(r1) =>
-    switch (arrow_of_term(ana_t)) {
+    switch (arrow_of_term(head_reduce(cs.en, ana_t))) {
     | Some(Arrow(r2)) =>
       if (consist_name(r1.x, r2.x) && consist(cs.en, r1.t, r2.t1)) {
         let t = syn(cs, r1.t);
         let tt = get_info(t).syn;
         let (cs, t: term) =
-          switch (Option.bind(tt, typ_of_term)) {
+          switch (
+            Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)
+          ) {
           | None =>
             let i = {...i, syn: Some(default_hole)};
             (cs, Mark({i, m: NotTyp(tt), e: t}));
@@ -529,7 +537,7 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
     let t = syn(cs, r.t);
     let tt = get_info(t).syn;
     let (cs2, t: term, ana1) =
-      switch (Option.bind(tt, typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         (cs, Mark({i, m: NotTyp(tt), e: t}), default_hole);
@@ -539,7 +547,6 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
     let cs2 = {...cs2, en: maybe_extend_env_name(r.x, e1, cs.en)};
     // Missing: Update completes
     let e2 = ana(cs2, ana_t, r.e2);
-    // let i = {...i, syn: get_info(e2).syn};
     Let({...r, i, t, e1, e2});
   | _ => subsume()
   };

@@ -201,7 +201,7 @@ let doms_of_context = (c: context): list(Node.t) => {
   let dom_of_entry = ((x: string, t: term)): Node.t => {
     Node.div(
       ~attr=Attr.create("class", "context-entry"),
-      [oneline([text(x), text(":"), dom_of_term(t)])],
+      [oneline([text(text_of_text(x)), text(":"), dom_of_term(t)])],
     );
   };
   List.map(dom_of_entry, c);
@@ -217,7 +217,11 @@ let doms_of_context_and_env = (c: context, en: env): list(Node.t) => {
       };
     Node.div(
       ~attr=Attr.create("class", "context-entry"),
-      [oneline([text(x), text(":"), dom_of_term(t)] @ content)],
+      [
+        oneline(
+          [text(text_of_text(x)), text(":"), dom_of_term(t)] @ content,
+        ),
+      ],
     );
   };
   List.map(dom_of_entry, c);

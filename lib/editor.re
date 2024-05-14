@@ -66,6 +66,15 @@ let rec apply_zname = (a: edit_action, z: zname): zname => {
   | _ => z
   };
 };
+let keyword_var = (e: pterm) =>
+  switch (e) {
+  | Var(x) =>
+    switch (edit_action_of_text(x)) {
+    | Some(_) => true
+    | None => false
+    }
+  | _ => false
+  };
 let rec apply_zterm = (a: edit_action, z: zterm, ec: term): zterm => {
   switch (a, z) {
   | (Delete, Cursor(_)) => Cursor(Hole)
@@ -91,6 +100,8 @@ let rec apply_zterm = (a: edit_action, z: zterm, ec: term): zterm => {
   | (MakeTyp, Cursor(_)) => Cursor(Typ)
   | (MakeArrow, Cursor(t)) => RArrow(Hole, t, Cursor(Hole))
   | (MakeFun, z) => focus_hole(give_term(z, Fun(Hole, Hole, Hole)))
+  // | (TextAction, RAp(e1, Cursor(e2))) when !keyword_var(e2) =>
+  //   RAp(Ap(e1, e2), Cursor(Hole))
   | (MakeAp, Cursor(e)) => RAp(e, Cursor(Hole))
   | (MakeLet, z) => focus_hole(give_term(z, Let(Hole, Hole, Hole, Hole)))
   // | (MakeFun, Cursor(Hole)) => XFun(Cursor(Hole), Hole, Hole)
@@ -123,38 +134,6 @@ let rec apply_zterm = (a: edit_action, z: zterm, ec: term): zterm => {
       print_endline(string_of_pterm(e));
       z;
     }
-
-  // | (Giveterm(e), Cursor(Hole)) => Cursor(e)
-  // | (FillVar, z) =>
-  //   let z = apply_zterm(FocusHole, z);
-  //   let g = local_goal([], Hole, z);
-  //   if (complete_typ(g)) {
-  //     let c = local_context([], z);
-  //     let good_var = ((_: string, t: typ)) => {
-  //       consist(g, t) && complete_typ(t);
-  //     };
-  //     switch (List.filter(c, ~f=good_var)) {
-  //     | [] => z
-  //     | [(x, _), ..._] => apply_zterm(Giveterm(Var(x)), z)
-  //     };
-  //   } else {
-  //     z;
-  //   };
-  // | (Refine, z) =>
-  //   switch (local_goal([], Hole, z)) {
-  //   | Arrow(t1, _) =>
-  //     apply_zterm(
-  //       FocusHole,
-  //       apply_zterm(
-  //         Giveterm(
-  //           Fun(Text(var_for_typ(t1, local_context([], z))), t1, Hole),
-  //         ),
-  //         z,
-  //       ),
-  //     )
-  // | _ => z
-  // }
-  // | (Auto, z) => apply_zterm(Refine, apply_zterm(FillVar, z))
   | (a, XArrow(z, t1, t2)) => XArrow(apply_zname(a, z), t1, t2)
   | (a, LArrow(x, z, t2)) => LArrow(x, apply_zterm(a, z, ec), t2)
   | (a, RArrow(x, t1, z)) => RArrow(x, t1, apply_zterm(a, z, ec))

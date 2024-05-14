@@ -481,7 +481,12 @@ let library =
                                 ),
                               ),
                             ),
-                            Hole,
+                            Let(
+                              Text("A"),
+                              Typ,
+                              Hole,
+                              Let(Text("x"), Var("A"), Hole, Var("x")),
+                            ),
                           ),
                         ),
                       ),
