@@ -14,7 +14,7 @@ let action_of_key =
   | Delete => Some(Edit(Delete))
   | Space => Some(Edit(TextAction))
   | Period => Some(Edit(MakeFun))
-  | Equal => Some(Edit(MakeArrow))
+  | Equal => control ? None : Some(Edit(MakeArrow))
   | ShiftLeft
   | ShiftRight => Some(Shift(true))
   | ControlLeft
@@ -65,7 +65,7 @@ let action_of_key =
   | Digit7 => Some(Edit(AddString(shift ? "7" : "7")))
   | Digit8 => Some(Edit(AddString(shift ? "8" : "8")))
   | Digit9 => Some(Edit(AddString(shift ? "9" : "9")))
-  | Minus => Some(Edit(AddString(shift ? "_" : "-")))
+  | Minus => control ? None : Some(Edit(AddString(shift ? "_" : "-")))
   | Comma
   | Enter
   | Escape
