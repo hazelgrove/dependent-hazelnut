@@ -30,33 +30,56 @@ type zterm =
   | E1Let(name, pure_term, zterm, pure_term)
   | E2Let(name, pure_term, pure_term, zterm);
 
-type info =
-  | None
-  | Some({
-      goal: term,
-      context,
-      en: env,
-    })
+type info = {
+  c: context,
+  completes: list(term),
+  en: env,
+  goal: option(term),
+  syn: option(term),
+}
 
 and mark =
   | UnknownVar(string)
-  | FunNotArrow(term)
   | Mismatch(term, term)
-  | NotTyp(term)
-
-and plain_term =
-  | Hole
-  | Typ
-  | Mark(mark, term)
-  | Var(string)
-  | Base(string)
-  | Arrow(name, term, term)
-  | Fun(name, term, term)
-  | Ap(term, term)
-  | Let(name, term, term, term)
+  | FunNotArrow(option(term))
+  | NotTyp(option(term))
 
 and term =
-  | Info(info, plain_term)
+  | Hole({i: info})
+  | Typ({i: info})
+  | Mark({
+      i: info,
+      m: mark,
+      e: term,
+    })
+  | Var({
+      i: info,
+      x: string,
+    })
+  | Arrow({
+      i: info,
+      x: name,
+      t1: term,
+      t2: term,
+    })
+  | Fun({
+      i: info,
+      x: name,
+      t: term,
+      e: term,
+    })
+  | Ap({
+      i: info,
+      e1: term,
+      e2: term,
+    })
+  | Let({
+      i: info,
+      x: name,
+      t: term,
+      e1: term,
+      e2: term,
+    })
 
 and context = list((string, term))
 
