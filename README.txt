@@ -1,3 +1,7 @@
+## Dependent Hazelnut
+
+An experimental structured editing environment for a redimentary dependently typed language, based on the theory of [Hazel](https://hazel.org/), specifically the [marked lambda calculus](https://hazel.org/papers/marking-popl24.pdf).
+
 Todos:
 - Capture avoiding substitution
 - Alpha equivalence 
