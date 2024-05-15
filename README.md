@@ -15,3 +15,5 @@ Todos:
 - Better visuals
 
 - Additional type theoretic features
+
+![image](https://github.com/thomasporter522/dependent-hazelnut/assets/22896135/5452ab5b-bb51-43f6-967e-faadd0b92ce9)
