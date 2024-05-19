@@ -58,6 +58,7 @@ and term =
   | Var({
       i: info,
       x: string,
+      idx: int,
     })
   | Arrow({
       i: info,

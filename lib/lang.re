@@ -57,7 +57,7 @@ let rec term_of_pterm = (e: pterm) =>
   switch (e) {
   | Hole => Hole({i: default_info})
   | Typ => Typ({i: default_info})
-  | Var(x) => Var({i: default_info, x})
+  | Var(x) => Var({i: default_info, x, idx: (-1)})
   | Arrow(x, t1, t2) =>
     Arrow({
       i: default_info,
@@ -292,20 +292,14 @@ let rec head_consist = (en: env, t1, t2: term): bool => {
   | (Typ(_), Typ(_)) => true
   | (Mark(_), _)
   | (_, Mark(_)) => false
-  | (Var(r1), Var(r2)) => r1.x == r2.x
+  | (Var(r1), Var(r2)) => r1.idx == r2.idx
   | (Arrow(r1), Arrow(r2)) =>
-    consist_name(r1.x, r2.x)
-    && consist(en, r1.t1, r2.t1)
-    && consist(en, r1.t2, r2.t2)
-  | (Fun(r1), Fun(r2)) =>
-    consist_name(r1.x, r1.x)
-    && consist(en, r1.t, r2.t)
-    && consist(en, r1.e, r2.e)
+    consist(en, r1.t1, r2.t1) && consist(en, r1.t2, r2.t2)
+  | (Fun(r1), Fun(r2)) => consist(en, r1.t, r2.t) && consist(en, r1.e, r2.e)
   | (Ap(r1), Ap(r2)) =>
     consist(en, r1.e1, r2.e1) && consist(en, r1.e2, r2.e2)
   | (Let(r1), Let(r2)) =>
-    consist_name(r1.x, r2.x)
-    && consist(en, r1.t, r2.t)
+    consist(en, r1.t, r2.t)
     && consist(en, r1.e1, r2.e1)
     && consist(en, r1.e2, r2.e2)
   | _ => false
@@ -405,14 +399,23 @@ let rec syn = (cs: contexts, e: term): term => {
   // let (e', _) = syn(c, en, e);
   // (e', Hole);
   | Var(r) =>
-    switch (lookup(r.x, cs.c)) {
+    // returns the index and type of r.x if present
+    let context_folder = ((idx, t), p) =>
+      switch (p, t) {
+      | ((x, t'), None) when x == r.x => (idx, Some(t'))
+      | (_, Some(_)) => (idx, t)
+      | (_, None) => (idx + 1, None)
+      };
+    let (idx, t) =
+      List.fold_left(context_folder, (0, None), List.rev(cs.c));
+    switch (t) {
     | None =>
       let i = {...i, syn: Some(default_hole)};
       Mark({i, m: UnknownVar(r.x), e: Var({...r, i})});
     | Some(t) =>
       let i = {...i, syn: Some(head_reduce(cs.en, t))};
-      Var({...r, i});
-    }
+      Var({...r, i, idx});
+    };
   | Arrow(r) =>
     let t1' = syn(cs, r.t1);
     let t1t = get_info(t1').syn;
