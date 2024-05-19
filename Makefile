@@ -9,11 +9,8 @@ build:
 	dune build bin/main.bc.js
 	dune build bin/index.html
 
-plain-url:
-	@echo "file://$(HTML_FILE)"
-
 url:
-	@echo 'file://wsl$$/Ubuntu$(HTML_FILE)'
+	@echo "file://$(HTML_FILE)"
 
 clean:
 	dune clean
