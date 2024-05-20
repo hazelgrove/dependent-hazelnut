@@ -41,9 +41,7 @@ let rec pterm_at_cursor = (z: zterm) =>
   };
 
 let default_info: info = {
-  c: [],
-  // completes: [],
-  en: [],
+  ctx: [],
   goal: None,
   syn: None,
   cursed: false,
@@ -168,83 +166,95 @@ let rec place_cursor = (z: zterm, e: term): term => {
 
 let valid_name = x => String.trim(x) != "";
 
-let rec extend_context = (x: string, t: term, c: context): context =>
-  switch (c) {
-  | [] => [(x, t)]
-  | [(y, _), ...c] when x == y => extend_context(x, t, c)
-  | [(y, t'), ...c] => [(y, t'), ...extend_context(x, t, c)]
-  };
-
-let extend_context_name = (x: name, t: term, c: context): context =>
-  switch (x) {
-  | Hole => c
-  | Text(x') => extend_context(x', t, c)
-  };
-
-let rec extend_env = (x: string, e: term, en: env): env =>
-  switch (en) {
-  | [] => [(x, e)]
-  | [(y, _), ...c] when x == y => extend_env(x, e, c)
-  | [(y, t'), ...c] => [(y, t'), ...extend_env(x, e, c)]
-  };
-
-let extend_env_name = (x: name, e: term, en: env): env =>
-  switch (x) {
-  | Hole => en
-  | Text(x') => extend_env(x', e, en)
-  };
-
-let maybe_extend_env_name = (x: name, e: term, en: env): env =>
-  switch (e) {
-  | Hole(_) => en
-  | _ => extend_env_name(x, e, en)
-  };
-
 let extend_list_name = (x: name, c: list(string)): list(string) =>
   switch (x) {
   | Hole => c
   | Text(x') => [x', ...c]
   };
 
-let rec lookup = (x: string, c: context) => {
-  switch (c) {
-  | [] => None
-  | [(y, t), ..._] when x == y => Some(t)
-  | [_, ...c] => lookup(x, c)
-  };
-};
+// let rec lookup = (x: string, c: context) => {
+//   switch (c) {
+//   | [] => None
+//   | [(y, t), ..._] when x == y => Some(t)
+//   | [_, ...c] => lookup(x, c)
+//   };
+// };
 
 // SECTION: CONSISTENCY, MATCHING, AND REDUCTION
 
-let rec sub = (x: string, e1: term, e2: term): term => {
-  switch (e2) {
-  | Hole(_)
-  | Typ(_) => e2
-  | Var(r) => r.x == x ? e1 : e2
-  | Mark(r) => Mark({...r, e: sub(x, e1, r.e)})
-  | Ap(r) => Ap({...r, e1: sub(x, e1, r.e1), e2: sub(x, e1, r.e2)})
-  | Arrow(r) =>
-    r.x == Text(x)
-      ? e2 : Arrow({...r, t1: sub(x, e1, r.t1), t2: sub(x, e1, r.t2)})
-  | Fun(r) =>
-    r.x == Text(x)
-      ? e2 : Fun({...r, t: sub(x, e1, r.t), e: sub(x, e1, r.e)})
-  | Let(r) =>
-    r.x == Text(x)
-      ? e2
-      : Let({
-          ...r,
-          t: sub(x, e1, r.t),
-          e1: sub(x, e1, r.e1),
-          e2: sub(x, e1, r.e2),
-        })
+let index_ctx_opt = (ctx, n) => {
+  // print_endline(string_of_int(n));
+  switch (n) {
+  | (-1) => None
+  | _ => List.nth_opt(ctx, n)
   };
 };
 
-let sub_name = (x: name, e1: term, e2: term): term => {
-  switch (x) {
-  | Hole => e2
-  | Text(x) => sub(x, e1, e2)
+// shift indices above threshold by n
+let rec shift_indices = (n: int, t: int, e: term) =>
+  switch (e) {
+  | Hole(_)
+  | Typ(_) => e
+  | Ap(r) =>
+    Ap({...r, e1: shift_indices(n, t, r.e1), e2: shift_indices(n, t, r.e2)})
+  | Mark(r) => Mark({...r, e: shift_indices(n, t, r.e)})
+  | Arrow(r) =>
+    Arrow({
+      ...r,
+      t1: shift_indices(n, t, r.t1),
+      t2: shift_indices(n - 1, 1 + t, r.t2),
+    })
+  | Fun(r) =>
+    Fun({
+      ...r,
+      t: shift_indices(n, t, r.t),
+      e: shift_indices(n - 1, 1 + t, r.e),
+    })
+  | Let(r) =>
+    Let({
+      ...r,
+      t: shift_indices(n, t, r.t),
+      e1: shift_indices(n, t, r.e1),
+      e2: shift_indices(n - 1, 1 + t, r.e2),
+    })
+  | Var(r) =>
+    Var({
+      ...r,
+      idx:
+        if (r.idx >= t) {
+          r.idx + n;
+        } else {
+          r.idx;
+        },
+    })
+  };
+
+let rec sub = (n: int, e1: term, e2: term): term => {
+  switch (e2) {
+  | Hole(_)
+  | Typ(_) => e2
+  | Var(r) => r.idx == n ? e1 : e2
+  | Mark(r) => Mark({...r, e: sub(n, e1, r.e)})
+  | Ap(r) => Ap({...r, e1: sub(n, e1, r.e1), e2: sub(n, e1, r.e2)})
+  | Arrow(r) =>
+    Arrow({
+      ...r,
+      t1: sub(n, e1, r.t1),
+      t2: sub(1 + n, shift_indices(1, 0, e1), r.t2),
+    })
+  | Fun(r) =>
+    Fun({
+      ...r,
+      t: sub(n, e1, r.t),
+      e: sub(1 + n, shift_indices(1, 0, e1), r.e),
+    })
+  | Let(r) =>
+    Let({
+      ...r,
+      t: sub(n, e1, r.t),
+      e1: sub(n, e1, r.e1),
+      e2: sub(1 + n, shift_indices(1, 0, e1), r.e2),
+    })
   };
 };
 
@@ -254,7 +264,7 @@ let sub_name = (x: name, e1: term, e2: term): term => {
 // }
 
 // Beta reduce until head is exposed, if possible
-let rec head_reduce = (en: env, e: term): term => {
+let rec head_reduce = (ctx: context, e: term): term => {
   switch (e) {
   | Hole(_)
   | Typ(_)
@@ -263,13 +273,18 @@ let rec head_reduce = (en: env, e: term): term => {
   | Mark(_)
   | Let(_) => e
   | Var(r) =>
-    switch (List.assoc_opt(r.x, en)) {
+    switch (index_ctx_opt(ctx, r.idx)) {
     | None => e
-    | Some(e') => head_reduce(en, e')
+    | Some(c) =>
+      switch (c.e) {
+      | None
+      | Some(Hole(_)) => e // Declarations with a hole body are considered axioms. This could be changed.
+      | Some(e') => head_reduce(ctx, e')
+      }
     }
   | Ap(r) =>
-    switch (head_reduce(en, r.e1)) {
-    | Fun(r2) => head_reduce(en, sub_name(r2.x, r.e2, r2.e))
+    switch (head_reduce(ctx, r.e1)) {
+    | Fun(r2) => head_reduce(ctx, sub(0, r.e2, r2.e))
     | Hole(r2) => Hole(r2)
     | _ => Ap(r)
     }
@@ -285,29 +300,30 @@ let consist_name = (x1, x2: name): bool => {
 };
 
 // Checks consistency of head-reduced terms
-let rec head_consist = (en: env, t1, t2: term): bool => {
+let rec head_consist = (ctx: context, t1, t2: term): bool => {
   switch (t1: term, t2: term) {
   | (Hole(_), _)
   | (_, Hole(_))
-  | (Typ(_), Typ(_)) => true
+  | (Typ(_), Typ(_))
   | (Mark(_), _)
-  | (_, Mark(_)) => false
+  | (_, Mark(_)) => true
   | (Var(r1), Var(r2)) => r1.idx == r2.idx
   | (Arrow(r1), Arrow(r2)) =>
-    consist(en, r1.t1, r2.t1) && consist(en, r1.t2, r2.t2)
-  | (Fun(r1), Fun(r2)) => consist(en, r1.t, r2.t) && consist(en, r1.e, r2.e)
+    consist(ctx, r1.t1, r2.t1) && consist(ctx, r1.t2, r2.t2)
+  | (Fun(r1), Fun(r2)) =>
+    consist(ctx, r1.t, r2.t) && consist(ctx, r1.e, r2.e)
   | (Ap(r1), Ap(r2)) =>
-    consist(en, r1.e1, r2.e1) && consist(en, r1.e2, r2.e2)
+    consist(ctx, r1.e1, r2.e1) && consist(ctx, r1.e2, r2.e2)
   | (Let(r1), Let(r2)) =>
-    consist(en, r1.t, r2.t)
-    && consist(en, r1.e1, r2.e1)
-    && consist(en, r1.e2, r2.e2)
+    consist(ctx, r1.t, r2.t)
+    && consist(ctx, r1.e1, r2.e1)
+    && consist(ctx, r1.e2, r2.e2)
   | _ => false
   };
 }
-and consist = (en: env, t1, t2: term): bool => {
-  let (t1', t2') = (head_reduce(en, t1), head_reduce(en, t2));
-  head_consist(en, t1', t2');
+and consist = (ctx: context, t1, t2: term): bool => {
+  let (t1', t2') = (head_reduce(ctx, t1), head_reduce(ctx, t2));
+  head_consist(ctx, t1', t2');
 };
 
 // Structural equality
@@ -368,26 +384,11 @@ let arrow_of_term = (t: term): option(term) => {
 
 // SECTION: STATIC ELABORATION
 
-type contexts = {
-  c: context,
-  // completes: list(term),
-  en: env,
-};
-
-let store_contexts = (cs: contexts, i: info): info => {
-  {
-    ...i,
-    c: cs.c,
-    // completes:  cs.completes,
-    en: cs.en,
-  };
-};
-
 // Synthetic static judgement. returns new_expression
 // Info is filled out, and marks are inserted
 // Existing info is not necessarily paid attention to
-let rec syn = (cs: contexts, e: term): term => {
-  let i = store_contexts(cs, get_info(e));
+let rec syn = (ctx: context, e: term): term => {
+  let i = {...get_info(e), ctx};
   switch (e) {
   | Hole(_) =>
     let i = {...i, syn: Some(default_hole)};
@@ -400,112 +401,114 @@ let rec syn = (cs: contexts, e: term): term => {
   // (e', Hole);
   | Var(r) =>
     // returns the index and type of r.x if present
-    let context_folder = ((idx, t), p) =>
-      switch (p, t) {
-      | ((x, t'), None) when x == r.x => (idx, Some(t'))
-      | (_, Some(_)) => (idx, t)
-      | (_, None) => (idx + 1, None)
+    let rec lookup_name = (idx, ctx_arg) =>
+      switch (ctx_arg) {
+      | [] => ((-1), None)
+      | [c, ..._] when c.x == Text(r.x) => (idx, Some(c.t))
+      | [_, ...ctx_arg] => lookup_name(idx + 1, ctx_arg)
       };
-    let (idx, t) =
-      List.fold_left(context_folder, (0, None), List.rev(cs.c));
+    let (idx, t) = lookup_name(0, ctx);
     switch (t) {
     | None =>
       let i = {...i, syn: Some(default_hole)};
       Mark({i, m: UnknownVar(r.x), e: Var({...r, i})});
     | Some(t) =>
-      let i = {...i, syn: Some(head_reduce(cs.en, t))};
+      let t = head_reduce(ctx, t);
+      let t = shift_indices(idx + 1, 0, t); // Adjust context down
+      let i = {...i, syn: Some(t)};
       Var({...r, i, idx});
     };
   | Arrow(r) =>
-    let t1' = syn(cs, r.t1);
+    let t1' = syn(ctx, r.t1);
     let t1t = get_info(t1').syn;
-    let (cs, t1'': term) =
-      switch (Option.bind(Option.map(head_reduce(cs.en), t1t), typ_of_term)) {
+    let t1'': term =
+      switch (Option.bind(Option.map(head_reduce(ctx), t1t), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
-        (cs, Mark({i, m: NotTyp(t1t), e: t1'}));
-      | Some(_) => ({...cs, c: extend_context_name(r.x, t1', cs.c)}, t1')
+        Mark({i, m: NotTyp(t1t), e: t1'});
+      | Some(_) => t1'
       };
-    // Missing: Update completes
-    let t2' = syn(cs, r.t2);
+    let ctx = [{x: r.x, t: t1'', e: None}, ...ctx];
+    let t2' = syn(ctx, r.t2);
     let t2t = get_info(t2').syn;
     let t2'': term =
-      switch (Option.bind(Option.map(head_reduce(cs.en), t2t), typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(ctx), t2t), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         Mark({i, m: NotTyp(t2t), e: t2'});
       | Some(_) => t2'
       };
+    // Adjust syn up
     let i = {...i, syn: Some(Typ({i: default_info}))};
     Arrow({...r, i, t1: t1'', t2: t2''});
   | Fun(r) =>
-    let t = syn(cs, r.t);
+    let t = syn(ctx, r.t);
     let tt = get_info(t).syn;
-    let (cs, t: term) =
-      switch (Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)) {
+    let t: term =
+      switch (Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
-        (cs, Mark({i, m: NotTyp(tt), e: t}));
-      | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t)
+        Mark({i, m: NotTyp(tt), e: t});
+      | Some(_) => t
       };
-    // Missing: Update completes
-    let e = syn(cs, r.e);
+    let ctx = [{x: r.x, t, e: None}, ...ctx];
+    let e = syn(ctx, r.e);
     let et = get_info(e).syn;
     let syn =
       switch (et) {
       | None => None
       | Some(et) => Some(Arrow({i: default_info, x: r.x, t1: t, t2: et}))
       };
+    // Adjust syn up
     let i = {...i, syn};
     Fun({...r, i, t, e});
   | Ap(r) =>
-    let e1 = syn(cs, r.e1);
+    let e1 = syn(ctx, r.e1);
     let t1 = get_info(e1).syn;
-    switch (Option.bind(Option.map(head_reduce(cs.en), t1), arrow_of_term)) {
+    switch (Option.bind(Option.map(head_reduce(ctx), t1), arrow_of_term)) {
     | None =>
       let i = {...i, syn: Some(default_hole)};
       let e1 = Mark({i, m: FunNotArrow(t1), e: e1});
-      let e2 = ana(cs, default_hole, r.e2);
+      let e2 = ana(ctx, default_hole, r.e2);
       Ap({i, e1, e2});
     | Some(Arrow(r1)) =>
-      let e2 = ana(cs, head_reduce(cs.en, r1.t1), r.e2);
-      let syn = Some(head_reduce(cs.en, sub_name(r1.x, e2, r1.t2)));
+      let e2 = ana(ctx, head_reduce(ctx, r1.t1), r.e2);
+      let syn = Some(head_reduce(ctx, sub(0, e2, r1.t2)));
       let i = {...i, syn};
       Ap({i, e1, e2});
     | Some(_) => failwith("impossible")
     };
   | Let(r) =>
-    let t = syn(cs, r.t);
+    let t = syn(ctx, r.t);
     let tt = get_info(t).syn;
-    let (cs2, t: term, ana1) =
-      switch (Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)) {
+    let (t: term, ana1) =
+      switch (Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
-        (cs, Mark({i, m: NotTyp(tt), e: t}), default_hole);
-      | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t, t)
+        (Mark({i, m: NotTyp(tt), e: t}), default_hole);
+      | Some(_) => (t, t)
       };
-    let e1 = ana(cs, head_reduce(cs.en, ana1), r.e1);
-    let cs2 = {...cs2, en: maybe_extend_env_name(r.x, e1, cs.en)};
-    // Missing: Update completes
-    let e2 = syn(cs2, r.e2);
+    let e1 = ana(ctx, head_reduce(ctx, ana1), r.e1);
+    let ctx = [{x: r.x, t, e: Some(e1)}, ...ctx];
+    let e2 = syn(ctx, r.e2);
     let syn = get_info(e2).syn;
-    let syn = Option.map(sub_name(r.x, e1), syn); // Delta reduce synthesized type as it leaves the scope of the let binding
-    let syn = Option.map(head_reduce(cs.en), syn);
+    let syn = Option.map(sub(0, e1), syn); // Delta reduce synthesized type as it leaves the scope of the let binding
+    let syn = Option.map(head_reduce(ctx), syn);
+    // Adjust syn up
     let i = {...i, syn};
     Let({...r, i, t, e1, e2});
   };
 }
 // Analytic static judgement. returns new_expression
-and ana = (cs: contexts, ana_t: term, e: term): term => {
-  let i = store_contexts(cs, get_info(e));
-  let i = {...i, goal: Some(ana_t)};
+and ana = (ctx: context, ana_t: term, e: term): term => {
+  let i = {...get_info(e), ctx, goal: Some(ana_t)};
   let subsume = () => {
-    let e = syn(cs, e);
+    let e = syn(ctx, e);
     let i = get_info(e);
     let i = {...i, goal: Some(ana_t)};
     let e = set_info(e, i);
     let t = Option.get(get_info(e).syn);
-    if (consist(cs.en, ana_t, t)) {
+    if (consist(ctx, ana_t, t)) {
       e;
     } else {
       let i = {...i, syn: Some(default_hole)};
@@ -515,48 +518,44 @@ and ana = (cs: contexts, ana_t: term, e: term): term => {
   };
   switch (e) {
   | Fun(r1) =>
-    switch (arrow_of_term(head_reduce(cs.en, ana_t))) {
+    switch (arrow_of_term(head_reduce(ctx, ana_t))) {
     | Some(Arrow(r2)) =>
-      if (consist_name(r1.x, r2.x) && consist(cs.en, r1.t, r2.t1)) {
-        let t = syn(cs, r1.t);
+      let t = syn(ctx, r1.t);
+      if (consist(ctx, t, r2.t1)) {
         let tt = get_info(t).syn;
-        let (cs, t: term) =
+        let t: term =
           switch (
-            Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)
+            Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)
           ) {
           | None =>
             let i = {...i, syn: Some(default_hole)};
-            (cs, Mark({i, m: NotTyp(tt), e: t}));
-          | Some(_) => (
-              {
-                ...cs,
-                c: extend_context_name(r1.x, head_reduce(cs.en, t), cs.c),
-              },
-              t,
-            )
+            Mark({i, m: NotTyp(tt), e: t});
+          | Some(_) => t
           };
-        // Missing: Update completes
-        let e = ana(cs, head_reduce(cs.en, r2.t2), r1.e);
+        let ctx = [{x: r1.x, t, e: None}, ...ctx];
+        let ana_t = head_reduce(ctx, r2.t2);
+        // let ana_t = shift_indices(1, 0, ana_t); // Adjust ana down
+        let e = ana(ctx, ana_t, r1.e);
         Fun({...r1, i, t, e});
       } else {
         subsume();
-      }
+      };
     | _ => subsume()
     }
   | Let(r) =>
-    let t = syn(cs, r.t);
+    let t = syn(ctx, r.t);
     let tt = get_info(t).syn;
-    let (cs2, t: term, ana1) =
-      switch (Option.bind(Option.map(head_reduce(cs.en), tt), typ_of_term)) {
+    let (t: term, ana1) =
+      switch (Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
-        (cs, Mark({i, m: NotTyp(tt), e: t}), default_hole);
-      | Some(_) => ({...cs, c: extend_context_name(r.x, t, cs.c)}, t, t)
+        (Mark({i, m: NotTyp(tt), e: t}), default_hole);
+      | Some(_) => (t, t)
       };
-    let e1 = ana(cs, head_reduce(cs.en, ana1), r.e1);
-    let cs2 = {...cs2, en: maybe_extend_env_name(r.x, e1, cs.en)};
-    // Missing: Update completes
-    let e2 = ana(cs2, ana_t, r.e2);
+    let e1 = ana(ctx, head_reduce(ctx, ana1), r.e1);
+    let ctx = [{x: r.x, t, e: Some(e1)}, ...ctx];
+    // Adjust ana down
+    let e2 = ana(ctx, ana_t, r.e2);
     Let({...r, i, t, e1, e2});
   | _ => subsume()
   };

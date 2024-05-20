@@ -31,9 +31,7 @@ type zterm =
   | E2Let(name, pterm, pterm, zterm);
 
 type info = {
-  c: context,
-  // completes: list(term),
-  en: env,
+  ctx: context,
   goal: option(term),
   syn: option(term),
   cursed: bool,
@@ -85,6 +83,9 @@ and term =
       e2: term,
     })
 
-and context = list((string, term))
-
-and env = list((string, term));
+and context_entry = {
+  x: name,
+  t: term,
+  e: option(term),
+}
+and context = list(context_entry);

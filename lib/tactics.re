@@ -45,22 +45,23 @@ let give_term = (z: zterm, e: pterm) => {
   apply_at_cursor_zterm(z, f);
 };
 
-let var_for_term = (c: context) => {
-  let rec next_fnum = (acc: int, c: context) =>
-    switch (c) {
+let var_for_term = (ctx: context) => {
+  let rec next_fnum = (acc: int, ctx: context) =>
+    switch (ctx) {
     | [] => acc
-    | [(x, _), ...c'] =>
+    | [{x: Hole, _}, ...ctx'] => next_fnum(acc, ctx')
+    | [{x: Text(x), _}, ...ctx'] =>
       if (starts_with(x, ~prefix="f")) {
         let substring: string = String.sub(x, 1, String.length(x) - 1);
         switch (int_of_string(substring)) {
-        | acc' => next_fnum(Int.max(acc, acc'), c')
-        | exception _ => next_fnum(acc, c')
+        | acc' => next_fnum(Int.max(acc, acc'), ctx')
+        | exception _ => next_fnum(acc, ctx')
         };
       } else {
-        next_fnum(acc, c');
+        next_fnum(acc, ctx');
       }
     };
-  "f" ++ string_of_int(next_fnum(0, c) + 1);
+  "f" ++ string_of_int(next_fnum(0, ctx) + 1);
 };
 
 // type directed refinement - if the goal is an arrow, instantiates the right fun
@@ -69,7 +70,7 @@ let refine = (z: zterm, ec: term) => {
   | Some(Arrow(r)) =>
     let var_name =
       switch (r.x) {
-      | Hole => var_for_term(get_info(ec).c)
+      | Hole => var_for_term(get_info(ec).ctx)
       | Text(x) => x
       };
     focus_hole(
@@ -83,7 +84,8 @@ let var_for_lemma = (c: context) => {
   let rec next_hnum = (acc: int, c: context) =>
     switch (c) {
     | [] => acc
-    | [(x, _), ...c'] =>
+    | [{x: Hole, _}, ...c'] => next_hnum(acc, c')
+    | [{x: Text(x), _}, ...c'] =>
       if (starts_with(x, ~prefix="h")) {
         let substring: string = String.sub(x, 1, String.length(x) - 1);
         switch (int_of_string(substring)) {

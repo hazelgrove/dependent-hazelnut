@@ -49,9 +49,9 @@ let ( let* ) = (x, f) => {
 };
 
 let process_state = (exp: state) => {
-  let initial_contexts: contexts = {c: [], en: []};
+  let ctx: context = [];
   let p = pterm_of_zterm(exp);
-  let term = syn(initial_contexts, term_of_pterm(p));
+  let term = syn(ctx, term_of_pterm(p));
   let term_at_cursor = term_at_cursor(exp, term);
   (term, term_at_cursor);
 };

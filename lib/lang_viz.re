@@ -17,7 +17,7 @@ let text_of_text = (x: string) =>
   | None => x
   };
 
-let dom_of_name = (x: name, cursed: bool): Node.t =>
+let dom_of_name = (~cursed: bool=false, x: name): Node.t =>
   switch (x) {
   | Hole => if (cursed) {cursor_hole} else {hole}
   | Text(x) =>
@@ -57,13 +57,13 @@ let rec dom_of_term =
   | Hole(_) => hole
   | Typ(_) => text("◻")
   | Mark(r) => mark([dom_of_term(~inline, r.e)])
-  | Var(r) => text(text_of_text(r.x ++ "-" ++ string_of_int(r.idx)))
+  | Var(r) => text(text_of_text(r.x) ++ "-" ++ string_of_int(r.idx))
   | Arrow(r) =>
     let dom = {
       let binding =
         switch (r.x) {
         | Hole when !(r.i.name_cursed || r.i.cursed) => []
-        | _ => [dom_of_name(r.x, r.i.name_cursed), text(":")]
+        | _ => [dom_of_name(r.x, ~cursed=r.i.name_cursed), text(":")]
         };
       oneline(
         binding
@@ -85,7 +85,7 @@ let rec dom_of_term =
     };
   | Fun(r) =>
     let dom1 = [
-      dom_of_name(r.x, r.i.name_cursed),
+      dom_of_name(r.x, ~cursed=r.i.name_cursed),
       text(":"),
       dom_of_term(~inline=true, r.t),
       text("→"),
@@ -126,7 +126,7 @@ let rec dom_of_term =
     oneline([
       text("("),
       dom_of_term(Var(r)),
-      dom_of_name(Text(x), i3.name_cursed),
+      dom_of_name(Text(x), ~cursed=i3.name_cursed),
       text(":"),
       dom_of_term(t1),
       text("."),
@@ -187,7 +187,7 @@ let rec dom_of_term =
         // check_let(c, en, t, completes, e1)
         //   ? Node.text("🟩") :
         Node.text(""),
-        dom_of_name(r.x, r.i.name_cursed),
+        dom_of_name(r.x, ~cursed=r.i.name_cursed),
         text(":"),
         dom_of_term(r.t),
         text("←"),
@@ -197,34 +197,21 @@ let rec dom_of_term =
     )
   };
 
-let doms_of_context = (c: context): list(Node.t) => {
-  let dom_of_entry = ((x: string, t: term)): Node.t => {
-    Node.div(
-      ~attr=Attr.create("class", "context-entry"),
-      [oneline([text(text_of_text(x)), text(":"), dom_of_term(t)])],
-    );
-  };
-  List.map(dom_of_entry, c);
-};
-
-let doms_of_context_and_env = (c: context, en: env): list(Node.t) => {
-  let dom_of_entry = ((x: string, t: term)): Node.t => {
+let doms_of_context = (ctx: context): list(Node.t) => {
+  let dom_of_entry = (r): Node.t => {
     let content =
-      if (List.mem_assoc(x, en)) {
-        [text(" = ...")];
-      } else {
-        [];
+      switch (r.e) {
+      | None => []
+      | Some(_) => [text(" = ...")]
       };
     Node.div(
       ~attr=Attr.create("class", "context-entry"),
       [
-        oneline(
-          [text(text_of_text(x)), text(":"), dom_of_term(t)] @ content,
-        ),
+        oneline([dom_of_name(r.x), text(":"), dom_of_term(r.t)] @ content),
       ],
     );
   };
-  List.map(dom_of_entry, c);
+  List.map(dom_of_entry, ctx);
 };
 
 let dom_of_mark = (m: mark): Node.t => {

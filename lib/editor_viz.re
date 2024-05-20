@@ -11,8 +11,7 @@ let dom_of_state = (z: zterm, e: term, e': term) => {
   let cursed_e = place_cursor(z, e);
   let e_dom = dom_of_term(cursed_e);
 
-  // let c_dom = doms_of_context(i.c);
-  let c_en_dom = doms_of_context_and_env(i.c, i.en);
+  let c_en_dom = doms_of_context(i.ctx);
   let goal_dom =
     switch (i.goal) {
     | None => Node.Text("-")
