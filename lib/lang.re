@@ -172,23 +172,7 @@ let extend_list_name = (x: name, c: list(string)): list(string) =>
   | Text(x') => [x', ...c]
   };
 
-// let rec lookup = (x: string, c: context) => {
-//   switch (c) {
-//   | [] => None
-//   | [(y, t), ..._] when x == y => Some(t)
-//   | [_, ...c] => lookup(x, c)
-//   };
-// };
-
 // SECTION: CONSISTENCY, MATCHING, AND REDUCTION
-
-let index_ctx_opt = (ctx, n) => {
-  // print_endline(string_of_int(n));
-  switch (n) {
-  | (-1) => None
-  | _ => List.nth_opt(ctx, n)
-  };
-};
 
 // shift indices above threshold by n
 let rec shift_indices = (n: int, t: int, e: term) =>

@@ -237,7 +237,7 @@ let dom_of_mark = (m: mark): Node.t => {
     ])
   | FunNotArrow(t) =>
     oneline([
-      Node.text("Cannot apply term of non-funciton type "),
+      Node.text("Cannot apply term of non-function type "),
       dom_of_term_option(t),
     ])
   | NotTyp(t) =>
