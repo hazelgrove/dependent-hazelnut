@@ -258,7 +258,9 @@ let rec sub = (n: int, e1: term, e2: term): term => {
 
 // substitute e1 into e2, shifting other fv's in e2 down by 1
 let beta_sub = (e1, e2) => {
-  sub(-1, e1, shift_indices(-1, 0, e2));
+  let e1' = shift_indices(1, 0, e1);
+  let e = sub(0, e1', e2);
+  shift_indices(-1, 0, e);
 };
 
 // // Replaces all occurrences of x in e with the value of x in en

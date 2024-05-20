@@ -235,59 +235,7 @@ let library =
           //     ),
           //   ),
           // )
-          Fun(
-            Text("A"),
-            Typ,
-            Fun(
-              Text("P"),
-              Arrow(
-                Text("x"),
-                Var("A"),
-                Arrow(Text("y"), Var("A"), Typ),
-              ),
-              Fun(
-                Text("f1"),
-                Ap(
-                  Ap(Var("exists"), Var("A")),
-                  Fun(
-                    Text("x"),
-                    Var("A"),
-                    Arrow(
-                      Text("y"),
-                      Var("A"),
-                      Ap(Ap(Var("P"), Var("x")), Var("y")),
-                    ),
-                  ),
-                ),
-                Fun(
-                  Text("y"),
-                  Var("A"),
-                  Let(
-                    Text("M"),
-                    Typ,
-                    Ap(
-                      Ap(Var("exists"), Var("A")),
-                      Fun(
-                        Text("a"),
-                        Var("A"),
-                        Ap(Ap(Var("P"), Var("a")), Var("y")),
-                      ),
-                    ),
-                    Ap(
-                      Ap(
-                        Ap(
-                          Ap(Ap(Var("exists-rec"), Hole), Hole),
-                          Var("M"),
-                        ),
-                        Hole,
-                      ),
-                      Hole,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          Hole,
           Hole,
           //   Let(
           //     Text("nat"),
