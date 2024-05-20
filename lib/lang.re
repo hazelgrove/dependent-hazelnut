@@ -202,20 +202,20 @@ let rec shift_indices = (n: int, t: int, e: term) =>
     Arrow({
       ...r,
       t1: shift_indices(n, t, r.t1),
-      t2: shift_indices(n - 1, 1 + t, r.t2),
+      t2: shift_indices(n, 1 + t, r.t2),
     })
   | Fun(r) =>
     Fun({
       ...r,
       t: shift_indices(n, t, r.t),
-      e: shift_indices(n - 1, 1 + t, r.e),
+      e: shift_indices(n, 1 + t, r.e),
     })
   | Let(r) =>
     Let({
       ...r,
       t: shift_indices(n, t, r.t),
       e1: shift_indices(n, t, r.e1),
-      e2: shift_indices(n - 1, 1 + t, r.e2),
+      e2: shift_indices(n, 1 + t, r.e2),
     })
   | Var(r) =>
     Var({
@@ -473,7 +473,9 @@ let rec syn = (ctx: context, e: term): term => {
       Ap({i, e1, e2});
     | Some(Arrow(r1)) =>
       let e2 = ana(ctx, head_reduce(ctx, r1.t1), r.e2);
-      let syn = Some(head_reduce(ctx, sub(0, e2, r1.t2)));
+      let syn = sub(0, e2, r1.t2);
+      // let syn = shift_indices(1, 0, syn);
+      let syn = Some(head_reduce(ctx, syn));
       let i = {...i, syn};
       Ap({i, e1, e2});
     | Some(_) => failwith("impossible")
