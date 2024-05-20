@@ -55,7 +55,7 @@ let rec term_of_pterm = (e: pterm) =>
   switch (e) {
   | Hole => Hole({i: default_info})
   | Typ => Typ({i: default_info})
-  | Var(x) => Var({i: default_info, x, idx: (-1)})
+  | Var(x) => Var({i: default_info, x, idx: None})
   | Arrow(x, t1, t2) =>
     Arrow({
       i: default_info,
@@ -218,22 +218,20 @@ let rec shift_indices = (n: int, t: int, e: term) =>
       e2: shift_indices(n, 1 + t, r.e2),
     })
   | Var(r) =>
-    Var({
-      ...r,
-      idx:
-        if (r.idx >= t) {
-          r.idx + n;
-        } else {
-          r.idx;
-        },
-    })
+    let index_map = i =>
+      if (i >= t) {
+        i + n;
+      } else {
+        i;
+      };
+    Var({...r, idx: Option.map(index_map, r.idx)});
   };
 
 let rec sub = (n: int, e1: term, e2: term): term => {
   switch (e2) {
   | Hole(_)
   | Typ(_) => e2
-  | Var(r) => r.idx == n ? e1 : e2
+  | Var(r) => r.idx == Some(n) ? e1 : e2
   | Mark(r) => Mark({...r, e: sub(n, e1, r.e)})
   | Ap(r) => Ap({...r, e1: sub(n, e1, r.e1), e2: sub(n, e1, r.e2)})
   | Arrow(r) =>
@@ -258,6 +256,11 @@ let rec sub = (n: int, e1: term, e2: term): term => {
   };
 };
 
+// substitute e1 into e2, shifting other fv's in e2 down by 1
+let beta_sub = (e1, e2) => {
+  sub(-1, e1, shift_indices(-1, 0, e2));
+};
+
 // // Replaces all occurrences of x in e with the value of x in en
 // let delta_remove_occurrences = (e: term, en:env, x: string): term =>
 //   switch (e) {
@@ -273,7 +276,7 @@ let rec head_reduce = (ctx: context, e: term): term => {
   | Mark(_)
   | Let(_) => e
   | Var(r) =>
-    switch (index_ctx_opt(ctx, r.idx)) {
+    switch (Option.map(List.nth(ctx), r.idx)) {
     | None => e
     | Some(c) =>
       switch (c.e) {
@@ -416,7 +419,7 @@ let rec syn = (ctx: context, e: term): term => {
       let t = head_reduce(ctx, t);
       let t = shift_indices(idx + 1, 0, t); // Adjust context down
       let i = {...i, syn: Some(t)};
-      Var({...r, i, idx});
+      Var({...r, i, idx: Some(idx)});
     };
   | Arrow(r) =>
     let t1' = syn(ctx, r.t1);
@@ -473,7 +476,7 @@ let rec syn = (ctx: context, e: term): term => {
       Ap({i, e1, e2});
     | Some(Arrow(r1)) =>
       let e2 = ana(ctx, head_reduce(ctx, r1.t1), r.e2);
-      let syn = sub(0, e2, r1.t2);
+      let syn = beta_sub(e2, r1.t2);
       // let syn = shift_indices(1, 0, syn);
       let syn = Some(head_reduce(ctx, syn));
       let i = {...i, syn};

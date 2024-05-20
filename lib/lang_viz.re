@@ -57,7 +57,13 @@ let rec dom_of_term =
   | Hole(_) => hole
   | Typ(_) => text("◻")
   | Mark(r) => mark([dom_of_term(~inline, r.e)])
-  | Var(r) => text(text_of_text(r.x) ++ "-" ++ string_of_int(r.idx))
+  | Var(r) =>
+    let string_of_idx = idx =>
+      switch (idx) {
+      | None => ""
+      | Some(idx) => "." ++ string_of_int(idx)
+      };
+    text(text_of_text(r.x) ++ string_of_idx(r.idx));
   | Arrow(r) =>
     let dom = {
       let binding =
