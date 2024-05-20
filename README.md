@@ -8,8 +8,7 @@ UI Screenshot:
 ![image](https://github.com/thomasporter522/dependent-hazelnut/assets/22896135/5452ab5b-bb51-43f6-967e-faadd0b92ce9)
 
 Todos:
-- Capture avoiding substitution
-- Alpha equivalence 
+- Complete implementing De Bruijn indices
 - Eta equivalence
 - Basic type hole inference
 - Fix Type : Type
