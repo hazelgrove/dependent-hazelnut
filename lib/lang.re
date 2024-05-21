@@ -175,41 +175,58 @@ let extend_list_name = (x: name, c: list(string)): list(string) =>
 // SECTION: CONSISTENCY, MATCHING, AND REDUCTION
 
 // shift indices above threshold by n
-let rec shift_indices = (n: int, t: int, e: term) =>
-  switch (e) {
-  | Hole(_)
-  | Typ(_) => e
-  | Ap(r) =>
-    Ap({...r, e1: shift_indices(n, t, r.e1), e2: shift_indices(n, t, r.e2)})
-  | Mark(r) => Mark({...r, e: shift_indices(n, t, r.e)})
-  | Arrow(r) =>
-    Arrow({
-      ...r,
-      t1: shift_indices(n, t, r.t1),
-      t2: shift_indices(n, 1 + t, r.t2),
-    })
-  | Fun(r) =>
-    Fun({
-      ...r,
-      t: shift_indices(n, t, r.t),
-      e: shift_indices(n, 1 + t, r.e),
-    })
-  | Let(r) =>
-    Let({
-      ...r,
-      t: shift_indices(n, t, r.t),
-      e1: shift_indices(n, t, r.e1),
-      e2: shift_indices(n, 1 + t, r.e2),
-    })
-  | Var(r) =>
-    let index_map = i =>
-      if (i >= t) {
-        i + n;
-      } else {
-        i;
-      };
-    Var({...r, idx: Option.map(index_map, r.idx)});
-  };
+// currently we're getting stack overflows that don't happen when this
+// function is replaced with the identity. perhaps the issue is that terms
+// inside the info are not shifted up
+let rec shift_indices = (n: int, t: int, e: term) => {
+  // let i = get_info(e);
+  // let i = {
+  //   ...i,
+  //   goal: Option.map(shift_indices(n, t), i.goal),
+  //   syn: Option.map(shift_indices(n, t), i.syn),
+  // };
+  let e =
+    switch (e) {
+    | Hole(_)
+    | Typ(_) => e
+    | Ap(r) =>
+      Ap({
+        ...r,
+        e1: shift_indices(n, t, r.e1),
+        e2: shift_indices(n, t, r.e2),
+      })
+    | Mark(r) => Mark({...r, e: shift_indices(n, t, r.e)}) // todo: shift inside .m for error messages
+    | Arrow(r) =>
+      Arrow({
+        ...r,
+        t1: shift_indices(n, t, r.t1),
+        t2: shift_indices(n, 1 + t, r.t2),
+      })
+    | Fun(r) =>
+      Fun({
+        ...r,
+        t: shift_indices(n, t, r.t),
+        e: shift_indices(n, 1 + t, r.e),
+      })
+    | Let(r) =>
+      Let({
+        ...r,
+        t: shift_indices(n, t, r.t),
+        e1: shift_indices(n, t, r.e1),
+        e2: shift_indices(n, 1 + t, r.e2),
+      })
+    | Var(r) =>
+      let index_map = i =>
+        if (i >= t) {
+          i + n;
+        } else {
+          i;
+        };
+      Var({...r, idx: Option.map(index_map, r.idx)});
+    };
+  e;
+  // set_info(e, i);
+};
 
 let rec sub = (n: int, e1: term, e2: term): term => {
   switch (e2) {
@@ -252,8 +269,57 @@ let beta_sub = (e1, e2) => {
 //   switch (e) {
 // }
 
+// // returns c1 @ (the last n entries in c2)
+// // this is a crummy implementation, idk
+// let rec splice_context = (n, c1, c2) =>
+//   if (n > List.length(c2)) {
+//     splice_context(n, c1, List.tl(c2));
+//   } else {
+//     c1 @ c2;
+//   };
+
+// let rec set_outer_context = (n, ctx, e) => {
+//   let i = get_info(e);
+//   // print_endline(string_of_int(n));
+//   // print_endline(string_of_int(List.length(i.ctx)));
+//   let i = {...i, ctx: splice_context(n, ctx, i.ctx)};
+//   let e =
+//     switch (e) {
+//     | Hole(_)
+//     | Typ(_)
+//     | Var(_) => e
+//     | Ap(r) =>
+//       Ap({
+//         ...r,
+//         e1: set_outer_context(n, ctx, r.e1),
+//         e2: set_outer_context(n, ctx, r.e2),
+//       })
+//     | Mark(r) => Mark({...r, e: set_outer_context(n, ctx, r.e)})
+//     | Arrow(r) =>
+//       Arrow({
+//         ...r,
+//         t1: set_outer_context(n, ctx, r.t1),
+//         t2: set_outer_context(1 + n, ctx, r.t2),
+//       })
+//     | Fun(r) =>
+//       Fun({
+//         ...r,
+//         t: set_outer_context(n, ctx, r.t),
+//         e: set_outer_context(1 + n, ctx, r.e),
+//       })
+//     | Let(r) =>
+//       Let({
+//         ...r,
+//         t: set_outer_context(n, ctx, r.t),
+//         e1: set_outer_context(n, ctx, r.e1),
+//         e2: set_outer_context(1 + n, ctx, r.e2),
+//       })
+//     };
+//   set_info(e, i);
+// };
+
 // Beta reduce until head is exposed, if possible
-let rec head_reduce = (ctx: context, e: term): term => {
+let rec head_reduce = (ctx: context, offset: int, e: term): term => {
   switch (e) {
   | Hole(_)
   | Typ(_)
@@ -262,18 +328,53 @@ let rec head_reduce = (ctx: context, e: term): term => {
   | Mark(_)
   | Let(_) => e
   | Var(r) =>
-    switch (Option.map(List.nth(ctx), r.idx)) {
+    switch (r.idx) {
     | None => e
-    | Some(c) =>
-      switch (c.e) {
-      | None
-      | Some(Hole(_)) => e // Declarations with a hole body are considered axioms. This could be changed.
-      | Some(e') => head_reduce(ctx, e')
+    | Some(idx) =>
+      if (idx < offset) {
+        e;
+      } else {
+        let idx = idx - offset;
+        // if (idx >= List.length(ctx)) {
+        //   print_endline("WOAAHHH");
+        //   print_endline("Delting? var with name: " ++ r.x);
+        //   print_endline("and index: " ++ string_of_int(idx));
+        //   let string_of_name = r =>
+        //     switch (r.x) {
+        //     | Hole => "Hole"
+        //     | Text(x) => "Text(" ++ x ++ ")"
+        //     };
+        //   print_endline(
+        //     "and local context: "
+        //     ++ String.concat(",", List.map(string_of_name, r.i.ctx)),
+        //   );
+        //   print_endline(
+        //     "and passed context: "
+        //     ++ String.concat(",", List.map(string_of_name, ctx)),
+        //   );
+        // };
+        // e;
+        switch (List.nth(ctx, idx).e) {
+        | None
+        | Some(Hole(_)) => e // Declarations with a hole body are considered axioms. This could be changed.
+        | Some(e) =>
+          // print_endline("it's delting time!");
+          // let string_of_name = r =>
+          //   switch (r.x) {
+          //   | Hole => "Hole"
+          //   | Text(x) => "Text(" ++ x ++ ")"
+          //   };
+          // print_endline(String.concat(",", List.map(string_of_name, ctx)));
+          // print_endline("delta var: " ++ r.x);
+          // print_endline("delta shift: " ++ string_of_int(idx + 1));
+          let e = shift_indices(idx + 1, 0, e);
+          head_reduce(ctx, offset, e);
+        };
       }
     }
   | Ap(r) =>
-    switch (head_reduce(ctx, r.e1)) {
-    | Fun(r2) => head_reduce(ctx, sub(0, r.e2, r2.e))
+    switch (head_reduce(ctx, offset, r.e1)) {
+    | Fun(r2) => head_reduce(ctx, offset, beta_sub(r.e2, r2.e))
     | Hole(r2) => Hole(r2)
     | _ => Ap(r)
     }
@@ -289,7 +390,7 @@ let consist_name = (x1, x2: name): bool => {
 };
 
 // Checks consistency of head-reduced terms
-let rec head_consist = (ctx: context, t1, t2: term): bool => {
+let rec head_consist = (ctx: context, offset: int, t1, t2: term): bool => {
   switch (t1: term, t2: term) {
   | (Hole(_), _)
   | (_, Hole(_))
@@ -298,21 +399,25 @@ let rec head_consist = (ctx: context, t1, t2: term): bool => {
   | (_, Mark(_)) => true
   | (Var(r1), Var(r2)) => r1.idx == r2.idx
   | (Arrow(r1), Arrow(r2)) =>
-    consist(ctx, r1.t1, r2.t1) && consist(ctx, r1.t2, r2.t2)
+    consist(ctx, offset, r1.t1, r2.t1)
+    && consist(ctx, offset + 1, r1.t2, r2.t2)
   | (Fun(r1), Fun(r2)) =>
-    consist(ctx, r1.t, r2.t) && consist(ctx, r1.e, r2.e)
+    consist(ctx, offset, r1.t, r2.t) && consist(ctx, offset + 1, r1.e, r2.e)
   | (Ap(r1), Ap(r2)) =>
-    consist(ctx, r1.e1, r2.e1) && consist(ctx, r1.e2, r2.e2)
+    consist(ctx, offset, r1.e1, r2.e1) && consist(ctx, offset, r1.e2, r2.e2)
   | (Let(r1), Let(r2)) =>
-    consist(ctx, r1.t, r2.t)
-    && consist(ctx, r1.e1, r2.e1)
-    && consist(ctx, r1.e2, r2.e2)
+    consist(ctx, offset, r1.t, r2.t)
+    && consist(ctx, offset, r1.e1, r2.e1)
+    && consist(ctx, offset + 1, r1.e2, r2.e2)
   | _ => false
   };
 }
-and consist = (ctx: context, t1, t2: term): bool => {
-  let (t1', t2') = (head_reduce(ctx, t1), head_reduce(ctx, t2));
-  head_consist(ctx, t1', t2');
+and consist = (ctx: context, offset, t1, t2: term): bool => {
+  let (t1', t2') = (
+    head_reduce(ctx, offset, t1),
+    head_reduce(ctx, offset, t2),
+  );
+  head_consist(ctx, offset, t1', t2');
 };
 
 // Structural equality
@@ -377,33 +482,38 @@ let arrow_of_term = (t: term): option(term) => {
 // Info is filled out, and marks are inserted
 // Existing info is not necessarily paid attention to
 let rec syn = (ctx: context, e: term): term => {
-  let i = {...get_info(e), ctx};
+  let i = {...default_info, ctx}; // set the context in the info of the synthesized term
   switch (e) {
   | Hole(_) =>
-    let i = {...i, syn: Some(default_hole)};
+    let i = {...i, syn: Some(default_hole)}; // hole synthesizes hole
     Hole({i: i});
   | Typ(_) =>
-    let i = {...i, syn: Some(Typ({i: default_info}))};
+    let i = {...i, syn: Some(Typ({i: default_info}))}; // type synthesizes type
     Typ({i: i});
-  | Mark(_) => failwith("unreachable...?")
-  // let (e', _) = syn(c, en, e);
-  // (e', Hole);
+  | Mark(_) => failwith("unreachable") // there are no marks in unmarked terms
   | Var(r) =>
-    // returns the index and type of r.x if present
+    // scans the list ctx_arg for the first entry with the same name as the variable
+    // optionally returns (the index, the type) of that entry if found
     let rec lookup_name = (idx, ctx_arg) =>
       switch (ctx_arg) {
-      | [] => ((-1), None)
-      | [c, ..._] when c.x == Text(r.x) => (idx, Some(c.t))
+      | [] => None
+      | [c, ..._] when c.x == Text(r.x) => Some((idx, c.t))
       | [_, ...ctx_arg] => lookup_name(idx + 1, ctx_arg)
       };
-    let (idx, t) = lookup_name(0, ctx);
-    switch (t) {
+    switch (lookup_name(0, ctx)) {
     | None =>
-      let i = {...i, syn: Some(default_hole)};
-      Mark({i, m: UnknownVar(r.x), e: Var({...r, i})});
-    | Some(t) =>
-      let t = head_reduce(ctx, t);
-      let t = shift_indices(idx + 1, 0, t); // Adjust context down
+      // if the variable is free
+      let i = {...i, syn: Some(default_hole)}; // it synthesizes a hole
+      Mark({i, m: UnknownVar(r.x), e: Var({...r, i})}); // and is marked
+    | Some((idx, t)) =>
+      // if the variable is bound
+      // let t_i = get_info(t);
+      // let t_i = {...t_i, ctx};
+      // let t = set_info(t, t_i);
+
+      let t = shift_indices(idx + 1, 0, t); // shift indices to account for deeper context (equivalent to shifting context entries as they go under binders)
+      // let t = set_outer_context(0, ctx, t); // deeply update the contexts in the synthesized type to reflect its new location
+      let t = head_reduce(ctx, 0, t); // head reduce its type
       let i = {...i, syn: Some(t)};
       Var({...r, i, idx: Some(idx)});
     };
@@ -411,7 +521,9 @@ let rec syn = (ctx: context, e: term): term => {
     let t1' = syn(ctx, r.t1);
     let t1t = get_info(t1').syn;
     let t1'': term =
-      switch (Option.bind(Option.map(head_reduce(ctx), t1t), typ_of_term)) {
+      switch (
+        Option.bind(Option.map(head_reduce(ctx, 0), t1t), typ_of_term)
+      ) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         Mark({i, m: NotTyp(t1t), e: t1'});
@@ -421,7 +533,9 @@ let rec syn = (ctx: context, e: term): term => {
     let t2' = syn(ctx, r.t2);
     let t2t = get_info(t2').syn;
     let t2'': term =
-      switch (Option.bind(Option.map(head_reduce(ctx), t2t), typ_of_term)) {
+      switch (
+        Option.bind(Option.map(head_reduce(ctx, 0), t2t), typ_of_term)
+      ) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         Mark({i, m: NotTyp(t2t), e: t2'});
@@ -434,7 +548,7 @@ let rec syn = (ctx: context, e: term): term => {
     let t = syn(ctx, r.t);
     let tt = get_info(t).syn;
     let t: term =
-      switch (Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(ctx, 0), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         Mark({i, m: NotTyp(tt), e: t});
@@ -454,17 +568,17 @@ let rec syn = (ctx: context, e: term): term => {
   | Ap(r) =>
     let e1 = syn(ctx, r.e1);
     let t1 = get_info(e1).syn;
-    switch (Option.bind(Option.map(head_reduce(ctx), t1), arrow_of_term)) {
+    switch (Option.bind(Option.map(head_reduce(ctx, 0), t1), arrow_of_term)) {
     | None =>
       let i = {...i, syn: Some(default_hole)};
       let e1 = Mark({i, m: FunNotArrow(t1), e: e1});
       let e2 = ana(ctx, default_hole, r.e2);
       Ap({i, e1, e2});
     | Some(Arrow(r1)) =>
-      let e2 = ana(ctx, head_reduce(ctx, r1.t1), r.e2);
+      let e2 = ana(ctx, head_reduce(ctx, 0, r1.t1), r.e2);
       let syn = beta_sub(e2, r1.t2);
       // let syn = shift_indices(1, 0, syn);
-      let syn = Some(head_reduce(ctx, syn));
+      let syn = Some(head_reduce(ctx, 0, syn));
       let i = {...i, syn};
       Ap({i, e1, e2});
     | Some(_) => failwith("impossible")
@@ -473,18 +587,18 @@ let rec syn = (ctx: context, e: term): term => {
     let t = syn(ctx, r.t);
     let tt = get_info(t).syn;
     let (t: term, ana1) =
-      switch (Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(ctx, 0), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         (Mark({i, m: NotTyp(tt), e: t}), default_hole);
       | Some(_) => (t, t)
       };
-    let e1 = ana(ctx, head_reduce(ctx, ana1), r.e1);
+    let e1 = ana(ctx, head_reduce(ctx, 0, ana1), r.e1);
     let ctx = [{x: r.x, t, e: Some(e1)}, ...ctx];
     let e2 = syn(ctx, r.e2);
     let syn = get_info(e2).syn;
     let syn = Option.map(sub(0, e1), syn); // Delta reduce synthesized type as it leaves the scope of the let binding
-    let syn = Option.map(head_reduce(ctx), syn);
+    let syn = Option.map(head_reduce(ctx, 0), syn);
     // Adjust syn up
     let i = {...i, syn};
     Let({...r, i, t, e1, e2});
@@ -499,7 +613,7 @@ and ana = (ctx: context, ana_t: term, e: term): term => {
     let i = {...i, goal: Some(ana_t)};
     let e = set_info(e, i);
     let t = Option.get(get_info(e).syn);
-    if (consist(ctx, ana_t, t)) {
+    if (consist(ctx, 0, ana_t, t)) {
       e;
     } else {
       let i = {...i, syn: Some(default_hole)};
@@ -509,14 +623,14 @@ and ana = (ctx: context, ana_t: term, e: term): term => {
   };
   switch (e) {
   | Fun(r1) =>
-    switch (arrow_of_term(head_reduce(ctx, ana_t))) {
+    switch (arrow_of_term(head_reduce(ctx, 0, ana_t))) {
     | Some(Arrow(r2)) =>
       let t = syn(ctx, r1.t);
-      if (consist(ctx, t, r2.t1)) {
+      if (consist(ctx, 0, t, r2.t1)) {
         let tt = get_info(t).syn;
         let t: term =
           switch (
-            Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)
+            Option.bind(Option.map(head_reduce(ctx, 0), tt), typ_of_term)
           ) {
           | None =>
             let i = {...i, syn: Some(default_hole)};
@@ -524,8 +638,7 @@ and ana = (ctx: context, ana_t: term, e: term): term => {
           | Some(_) => t
           };
         let ctx = [{x: r1.x, t, e: None}, ...ctx];
-        let ana_t = head_reduce(ctx, r2.t2);
-        // let ana_t = shift_indices(1, 0, ana_t); // Adjust ana down
+        let ana_t = head_reduce(ctx, 0, r2.t2);
         let e = ana(ctx, ana_t, r1.e);
         Fun({...r1, i, t, e});
       } else {
@@ -537,15 +650,15 @@ and ana = (ctx: context, ana_t: term, e: term): term => {
     let t = syn(ctx, r.t);
     let tt = get_info(t).syn;
     let (t: term, ana1) =
-      switch (Option.bind(Option.map(head_reduce(ctx), tt), typ_of_term)) {
+      switch (Option.bind(Option.map(head_reduce(ctx, 0), tt), typ_of_term)) {
       | None =>
         let i = {...i, syn: Some(default_hole)};
         (Mark({i, m: NotTyp(tt), e: t}), default_hole);
       | Some(_) => (t, t)
       };
-    let e1 = ana(ctx, head_reduce(ctx, ana1), r.e1);
+    let e1 = ana(ctx, head_reduce(ctx, 0, ana1), r.e1);
     let ctx = [{x: r.x, t, e: Some(e1)}, ...ctx];
-    // Adjust ana down
+    let ana_t = shift_indices(1, 0, ana_t); // Adjust ana down
     let e2 = ana(ctx, ana_t, r.e2);
     Let({...r, i, t, e1, e2});
   | _ => subsume()
