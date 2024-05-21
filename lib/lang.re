@@ -264,60 +264,6 @@ let beta_sub = (e1, e2) => {
   shift_indices(-1, 0, e);
 };
 
-// // Replaces all occurrences of x in e with the value of x in en
-// let delta_remove_occurrences = (e: term, en:env, x: string): term =>
-//   switch (e) {
-// }
-
-// // returns c1 @ (the last n entries in c2)
-// // this is a crummy implementation, idk
-// let rec splice_context = (n, c1, c2) =>
-//   if (n > List.length(c2)) {
-//     splice_context(n, c1, List.tl(c2));
-//   } else {
-//     c1 @ c2;
-//   };
-
-// let rec set_outer_context = (n, ctx, e) => {
-//   let i = get_info(e);
-//   // print_endline(string_of_int(n));
-//   // print_endline(string_of_int(List.length(i.ctx)));
-//   let i = {...i, ctx: splice_context(n, ctx, i.ctx)};
-//   let e =
-//     switch (e) {
-//     | Hole(_)
-//     | Typ(_)
-//     | Var(_) => e
-//     | Ap(r) =>
-//       Ap({
-//         ...r,
-//         e1: set_outer_context(n, ctx, r.e1),
-//         e2: set_outer_context(n, ctx, r.e2),
-//       })
-//     | Mark(r) => Mark({...r, e: set_outer_context(n, ctx, r.e)})
-//     | Arrow(r) =>
-//       Arrow({
-//         ...r,
-//         t1: set_outer_context(n, ctx, r.t1),
-//         t2: set_outer_context(1 + n, ctx, r.t2),
-//       })
-//     | Fun(r) =>
-//       Fun({
-//         ...r,
-//         t: set_outer_context(n, ctx, r.t),
-//         e: set_outer_context(1 + n, ctx, r.e),
-//       })
-//     | Let(r) =>
-//       Let({
-//         ...r,
-//         t: set_outer_context(n, ctx, r.t),
-//         e1: set_outer_context(n, ctx, r.e1),
-//         e2: set_outer_context(1 + n, ctx, r.e2),
-//       })
-//     };
-//   set_info(e, i);
-// };
-
 // Beta reduce until head is exposed, if possible
 let rec head_reduce = (ctx: context, offset: int, e: term): term => {
   switch (e) {
@@ -334,39 +280,11 @@ let rec head_reduce = (ctx: context, offset: int, e: term): term => {
       if (idx < offset) {
         e;
       } else {
-        let idx = idx - offset;
-        // if (idx >= List.length(ctx)) {
-        //   print_endline("WOAAHHH");
-        //   print_endline("Delting? var with name: " ++ r.x);
-        //   print_endline("and index: " ++ string_of_int(idx));
-        //   let string_of_name = r =>
-        //     switch (r.x) {
-        //     | Hole => "Hole"
-        //     | Text(x) => "Text(" ++ x ++ ")"
-        //     };
-        //   print_endline(
-        //     "and local context: "
-        //     ++ String.concat(",", List.map(string_of_name, r.i.ctx)),
-        //   );
-        //   print_endline(
-        //     "and passed context: "
-        //     ++ String.concat(",", List.map(string_of_name, ctx)),
-        //   );
-        // };
-        // e;
-        switch (List.nth(ctx, idx).e) {
+        let idx = idx;
+        switch (List.nth(ctx, idx - offset).e) {
         | None
         | Some(Hole(_)) => e // Declarations with a hole body are considered axioms. This could be changed.
         | Some(e) =>
-          // print_endline("it's delting time!");
-          // let string_of_name = r =>
-          //   switch (r.x) {
-          //   | Hole => "Hole"
-          //   | Text(x) => "Text(" ++ x ++ ")"
-          //   };
-          // print_endline(String.concat(",", List.map(string_of_name, ctx)));
-          // print_endline("delta var: " ++ r.x);
-          // print_endline("delta shift: " ++ string_of_int(idx + 1));
           let e = shift_indices(idx + 1, 0, e);
           head_reduce(ctx, offset, e);
         };

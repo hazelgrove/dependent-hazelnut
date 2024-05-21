@@ -132,185 +132,86 @@ let library =
               ),
             ),
           ),
-          // Fun(
-          //   Text("A"),
-          //   Typ,
-          //   Fun(
-          //     Text("P"),
-          //     Arrow(
-          //       Text("x"),
-          //       Var("A"),
-          //       Arrow(Text("y"), Var("A"), Typ),
-          //     ),
-          //     Fun(
-          //       Text("f1"),
-          //       Ap(
-          //         Ap(Var("exists"), Var("A")),
-          //         Fun(
-          //           Text("x"),
-          //           Var("A"),
-          //           Arrow(
-          //             Text("y"),
-          //             Var("A"),
-          //             Ap(Ap(Var("P"), Var("x")), Var("y")),
-          //           ),
-          //         ),
-          //       ),
-          //       Fun(
-          //         Text("y"),
-          //         Var("A"),
-          //         Let(
-          //           Text("M"),
-          //           Typ,
-          //           Ap(
-          //             Ap(Var("exists"), Var("A")),
-          //             Fun(
-          //               Text("x"),
-          //               Var("A"),
-          //               Ap(Ap(Var("P"), Var("x")), Var("y")),
-          //             ),
-          //           ),
-          //           Let(
-          //             Text("Px"),
-          //             Arrow(Text("x"), Var("A"), Typ),
-          //             Fun(
-          //               Text("x"),
-          //               Var("A"),
-          //               Arrow(
-          //                 Text("y"),
-          //                 Var("A"),
-          //                 Ap(Ap(Var("P"), Var("x")), Var("y")),
-          //               ),
-          //             ),
-          //             Let(
-          //               Text("go"),
-          //               Arrow(
-          //                 Text("a"),
-          //                 Var("A"),
-          //                 Arrow(
-          //                   Text("p"),
-          //                   Ap(Var("Px"), Var("a")),
-          //                   Var("M"),
-          //                 ),
-          //               ),
-          //               Fun(
-          //                 Text("a"),
-          //                 Var("A"),
-          //                 Fun(
-          //                   Text("p"),
-          //                   Ap(Var("Px"), Var("a")),
-          //                   Ap(
-          //                     Ap(
-          //                       Ap(
-          //                         Ap(Var("exists-con"), Var("A")),
-          //                         Fun(
-          //                           Text("x"),
-          //                           Var("A"),
-          //                           Ap(Ap(Var("P"), Var("x")), Var("y")),
-          //                         ),
-          //                       ),
-          //                       Var("a"),
-          //                     ),
-          //                     Ap(Var("p"), Var("y")),
-          //                   ),
-          //                 ),
-          //               ),
-          //               Ap(
-          //                 Ap(
-          //                   Ap(
-          //                     Ap(
-          //                       Ap(Var("exists-rec"), Var("A")),
-          //                       Var("Px"),
-          //                     ),
-          //                     Var("M"),
-          //                   ),
-          //                   Var("go"),
-          //                 ),
-          //                 Var("f1"),
-          //               ),
-          //             ),
-          //           ),
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // )
           Fun(
-            Text("A"),
+            Text("B"),
             Typ,
             Fun(
               Text("P"),
               Arrow(
                 Text("x"),
-                Var("A"),
-                Arrow(Text("y"), Var("A"), Typ),
+                Var("B"),
+                Arrow(Text("y"), Var("B"), Typ),
               ),
               Fun(
                 Text("f1"),
                 Ap(
-                  Ap(Var("exists"), Var("A")),
+                  Ap(Var("exists"), Var("B")),
                   Fun(
                     Text("x"),
-                    Var("A"),
+                    Var("B"),
                     Arrow(
                       Text("y"),
-                      Var("A"),
+                      Var("B"),
                       Ap(Ap(Var("P"), Var("x")), Var("y")),
                     ),
                   ),
                 ),
                 Fun(
                   Text("y"),
-                  Var("A"),
+                  Var("B"),
                   Let(
                     Text("M"),
                     Typ,
                     Ap(
-                      Ap(Var("exists"), Var("A")),
+                      Ap(Var("exists"), Var("B")),
                       Fun(
-                        Text("a"),
-                        Var("A"),
-                        Ap(Ap(Var("P"), Var("a")), Var("y")),
+                        Text("x"),
+                        Var("B"),
+                        Ap(Ap(Var("P"), Var("x")), Var("y")),
                       ),
                     ),
                     Let(
                       Text("Px"),
-                      Arrow(Hole, Var("A"), Typ),
+                      Arrow(Text("x"), Var("B"), Typ),
                       Fun(
-                        Text("z"),
-                        Var("A"),
+                        Text("x"),
+                        Var("B"),
                         Arrow(
                           Text("y"),
-                          Var("A"),
-                          Ap(Ap(Var("P"), Var("z")), Var("y")),
+                          Var("B"),
+                          Ap(Ap(Var("P"), Var("x")), Var("y")),
                         ),
                       ),
                       Let(
                         Text("go"),
                         Arrow(
-                          Text("w"),
-                          Var("A"),
-                          Arrow(Hole, Ap(Var("Px"), Var("w")), Var("M")),
+                          Text("a"),
+                          Var("B"),
+                          Arrow(
+                            Text("p"),
+                            Ap(Var("Px"), Var("a")),
+                            Var("M"),
+                          ),
                         ),
                         Fun(
-                          Text("w"),
-                          Var("A"),
+                          Text("a"),
+                          Var("B"),
                           Fun(
-                            Text("f2"),
-                            Ap(Var("Px"), Var("w")),
+                            Text("p"),
+                            Ap(Var("Px"), Var("a")),
                             Ap(
                               Ap(
                                 Ap(
-                                  Ap(Var("exists-con"), Var("A")),
+                                  Ap(Var("exists-con"), Var("B")),
                                   Fun(
                                     Text("x"),
-                                    Var("A"),
+                                    Var("B"),
                                     Ap(Ap(Var("P"), Var("x")), Var("y")),
                                   ),
                                 ),
-                                Var("w"),
+                                Var("a"),
                               ),
-                              Ap(Var("f2"), Var("y")),
+                              Ap(Var("p"), Var("y")),
                             ),
                           ),
                         ),
@@ -318,12 +219,12 @@ let library =
                           Ap(
                             Ap(
                               Ap(
-                                Ap(Var("exists-rec"), Var("A")),
+                                Ap(Var("exists-rec"), Var("B")),
                                 Var("Px"),
                               ),
                               Var("M"),
                             ),
-                            Hole,
+                            Var("go"),
                           ),
                           Var("f1"),
                         ),
