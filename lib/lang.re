@@ -396,11 +396,25 @@ let arrow_of_term = (t: term): option(term) => {
 
 // SECTION: STATIC ELABORATION
 
+let apply_mark = (i, m, e) => {
+  let i = {...i, syn: Some(default_hole)}; // marks synthesize hole
+  Mark({i, m, e});
+};
+
+let mark_if_not_typ = (ctx, i, t, e) => {
+  // is t something that reduces to something that matches typ?
+  let t = Option.map(head_reduce(ctx, 0), t);
+  switch (Option.bind(t, typ_of_term)) {
+  | None => apply_mark(i, NotTyp(t), e) // if not, mark e
+  | Some(_) => e // if so, just e
+  };
+};
+
 // Synthetic static judgement. returns new_expression
 // Info is filled out, and marks are inserted
 // Existing info is not necessarily paid attention to
 let rec syn = (ctx: context, e: term): term => {
-  let i = {...default_info, ctx}; // set the context in the info of the synthesized term
+  let i = {...default_info, ctx}; // set the context in the info of the synthesizing term
   switch (e) {
   | Hole(_) =>
     let i = {...i, syn: Some(default_hole)}; // hole synthesizes hole
@@ -419,59 +433,29 @@ let rec syn = (ctx: context, e: term): term => {
       | [_, ...ctx_arg] => lookup_name(idx + 1, ctx_arg)
       };
     switch (lookup_name(0, ctx)) {
-    | None =>
-      // if the variable is free
-      let i = {...i, syn: Some(default_hole)}; // it synthesizes a hole
-      Mark({i, m: UnknownVar(r.x), e: Var({...r, i})}); // and is marked
+    | None => apply_mark(i, UnknownVar(r.x), e) // mark free variable
     | Some((idx, t)) =>
-      // if the variable is bound
-      // let t_i = get_info(t);
-      // let t_i = {...t_i, ctx};
-      // let t = set_info(t, t_i);
-
-      let t = shift_indices(idx + 1, 0, t); // shift indices to account for deeper context (equivalent to shifting context entries as they go under binders)
-      // let t = set_outer_context(0, ctx, t); // deeply update the contexts in the synthesized type to reflect its new location
-      let t = head_reduce(ctx, 0, t); // head reduce its type
-      let i = {...i, syn: Some(t)};
+      // If the variable is bound to type t...
+      let t = shift_indices(idx + 1, 0, t); // ... shift its indices to account for context difference (equivalent to shifting context entries as they go under binders)
+      let t = head_reduce(ctx, 0, t); // ... and head reduce it...
+      let i = {...i, syn: Some(t)}; // ... and finally, synthesize it.
       Var({...r, i, idx: Some(idx)});
     };
   | Arrow(r) =>
-    let t1' = syn(ctx, r.t1);
-    let t1t = get_info(t1').syn;
-    let t1'': term =
-      switch (
-        Option.bind(Option.map(head_reduce(ctx, 0), t1t), typ_of_term)
-      ) {
-      | None =>
-        let i = {...i, syn: Some(default_hole)};
-        Mark({i, m: NotTyp(t1t), e: t1'});
-      | Some(_) => t1'
-      };
-    let ctx = [{x: r.x, t: t1'', e: None}, ...ctx];
-    let t2' = syn(ctx, r.t2);
-    let t2t = get_info(t2').syn;
-    let t2'': term =
-      switch (
-        Option.bind(Option.map(head_reduce(ctx, 0), t2t), typ_of_term)
-      ) {
-      | None =>
-        let i = {...i, syn: Some(default_hole)};
-        Mark({i, m: NotTyp(t2t), e: t2'});
-      | Some(_) => t2'
-      };
-    // Adjust syn up
-    let i = {...i, syn: Some(Typ({i: default_info}))};
-    Arrow({...r, i, t1: t1'', t2: t2''});
+    let t1 = syn(ctx, r.t1); // process left side
+    let t1t = get_info(t1).syn; // get synthesized type
+    let t1 = mark_if_not_typ(ctx, i, t1t, t1); // ensure it's a typ
+    let ctx = [{x: r.x, t: t1, e: None}, ...ctx]; // update the context to reflect the binding in the arrow (it's a dependent arrow)
+    let t2 = syn(ctx, r.t2); // process the right side
+    let t2t = get_info(t2).syn; // get synthesized type
+    let t2 = mark_if_not_typ(ctx, i, t2t, t2); // ensure it's a typ
+    // Adjust syn up? I would think that indices need to be adjusted as a synthesized type moves over a binder, but I haven't encountered it yet
+    let i = {...i, syn: Some(Typ({i: default_info}))}; // synthesize typ
+    Arrow({...r, i, t1, t2});
   | Fun(r) =>
-    let t = syn(ctx, r.t);
-    let tt = get_info(t).syn;
-    let t: term =
-      switch (Option.bind(Option.map(head_reduce(ctx, 0), tt), typ_of_term)) {
-      | None =>
-        let i = {...i, syn: Some(default_hole)};
-        Mark({i, m: NotTyp(tt), e: t});
-      | Some(_) => t
-      };
+    let t = syn(ctx, r.t); // process annotation
+    let tt = get_info(t).syn; // get synthesized type
+    let t = mark_if_not_typ(ctx, i, tt, t); // ensure it's a typ
     let ctx = [{x: r.x, t, e: None}, ...ctx];
     let e = syn(ctx, r.e);
     let et = get_info(e).syn;
