@@ -235,7 +235,28 @@ let library =
               ),
             ),
           ),
-          Hole,
+          Let(
+            Text("visual-capture"),
+            Hole,
+            Fun(
+              Text("x"),
+              Hole,
+              Let(
+                Text("t"),
+                Hole,
+                Ap(
+                  Fun(
+                    Text("y"),
+                    Hole,
+                    Fun(Text("x"), Hole, Ap(Var("x"), Var("y"))),
+                  ),
+                  Var("x"),
+                ),
+                Let(Text("s"), Var("t"), Hole, Var("s")),
+              ),
+            ),
+            Hole,
+          ),
           //   Let(
           //     Text("nat"),
           //     Typ,
