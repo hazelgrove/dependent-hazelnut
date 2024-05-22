@@ -402,6 +402,10 @@ let mark_if_not_typ = (i, t, e) => {
   };
 };
 
+// Idea : instead of storing contexts, make a new "bind" node that is invisible, just adds an entry to the context. goes between a let and its .e2, for example
+// Why? Because when a type "changed locations" (e.g. teleports to be synthesized by a variable), its context changes. this matters for a more natural implementation of delta reduction (no offset parameter)
+// and for checking whether a variable has been captured, or is in scope, when displaying a syn or ana type.
+
 // Synthetic static judgement. returns new_expression with info filled out and marks inserted
 // Postcondition: synthesized type is head reduced
 let rec syn = (ctx: context, e: term): term => {
