@@ -58,14 +58,15 @@ let rec dom_of_term =
   | Typ(_) => text("◻")
   | Mark(r) => mark([dom_of_term(~inline, r.e)])
   | Var(r) =>
+    // I think this is buggy, the context is wrong
     let rec check_shadowed = (idx, ctx) =>
       switch (ctx) {
       | [] => false
       | [c, ..._] when c.x == Text(r.x) => r.idx != Some(idx)
       | [_, ...ctx] => check_shadowed(idx + 1, ctx)
       };
-    let string_of_idx = idx =>
-      switch (idx) {
+    let string_of_idx =
+      switch (r.idx) {
       | None => ""
       | Some(idx) =>
         if (check_shadowed(0, r.i.ctx)) {
@@ -74,7 +75,16 @@ let rec dom_of_term =
           "";
         }
       };
-    text(text_of_text(r.x) ++ string_of_idx(r.idx));
+    // let out_of_scope_message =
+    //   switch (r.idx) {
+    //   | None => ""
+    //   | Some(idx) =>
+    //     switch (List.nth(r.i.ctx, idx).x) {
+    //     | Hole => " (out of scope)"
+    //     | _ => ""
+    //     }
+    //   };
+    text(text_of_text(r.x) ++ string_of_idx);
   | Arrow(r) =>
     let dom = {
       let binding =

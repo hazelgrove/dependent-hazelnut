@@ -249,7 +249,26 @@ let library =
                 Hole,
               ),
             ),
-            Hole,
+            Let(
+              Text("visual-capture"),
+              Hole,
+              Fun(
+                Text("x"),
+                Hole,
+                Let(
+                  Text("t"),
+                  Hole,
+                  Var("x"),
+                  Let(
+                    Text("x"),
+                    Hole,
+                    Hole,
+                    Let(Text("s"), Var("t"), Hole, Var("s")),
+                  ),
+                ),
+              ),
+              Hole,
+            ),
           ),
           //   Let(
           //     Text("nat"),
