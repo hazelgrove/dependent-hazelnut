@@ -58,10 +58,21 @@ let rec dom_of_term =
   | Typ(_) => text("◻")
   | Mark(r) => mark([dom_of_term(~inline, r.e)])
   | Var(r) =>
+    let rec check_shadowed = (idx, ctx) =>
+      switch (ctx) {
+      | [] => false
+      | [c, ..._] when c.x == Text(r.x) => r.idx != Some(idx)
+      | [_, ...ctx] => check_shadowed(idx + 1, ctx)
+      };
     let string_of_idx = idx =>
       switch (idx) {
       | None => ""
-      | Some(idx) => "." ++ string_of_int(idx)
+      | Some(idx) =>
+        if (check_shadowed(0, r.i.ctx)) {
+          "." ++ string_of_int(idx);
+        } else {
+          "";
+        }
       };
     text(text_of_text(r.x) ++ string_of_idx(r.idx));
   | Arrow(r) =>
@@ -207,7 +218,8 @@ let doms_of_context = (ctx: context): list(Node.t) => {
   let dom_of_entry = (r): Node.t => {
     let content =
       switch (r.e) {
-      | None => []
+      | None
+      | Some(Hole(_)) => []
       | Some(_) => [text(" = ...")]
       };
     Node.div(

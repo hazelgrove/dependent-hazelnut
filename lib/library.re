@@ -236,23 +236,17 @@ let library =
             ),
           ),
           Let(
-            Text("visual-capture"),
+            Text("look-at-the-goal-at-a-below-the-goal-is-not-in-scope"),
             Hole,
-            Fun(
-              Text("x"),
+            Let(
+              Text("goal"),
               Hole,
+              Arrow(Text("y"), Hole, Var("y")),
               Let(
-                Text("t"),
+                Text("attempt"),
+                Var("goal"),
+                Fun(Hole, Hole, Var("a")),
                 Hole,
-                Ap(
-                  Fun(
-                    Text("y"),
-                    Hole,
-                    Fun(Text("x"), Hole, Ap(Var("x"), Var("y"))),
-                  ),
-                  Var("x"),
-                ),
-                Let(Text("s"), Var("t"), Hole, Var("s")),
               ),
             ),
             Hole,
