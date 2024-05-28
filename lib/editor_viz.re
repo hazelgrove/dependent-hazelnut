@@ -11,7 +11,7 @@ let dom_of_state = (z: zterm, e: term, e': term) => {
   let cursed_e = place_cursor(z, e);
   let e_dom = dom_of_term(cursed_e);
 
-  let c_en_dom = doms_of_context(i.ctx);
+  let ctx_dom = doms_of_context(i.ctx);
   let goal_dom =
     switch (i.goal) {
     | None => Node.Text("-")
@@ -34,10 +34,10 @@ let dom_of_state = (z: zterm, e: term, e': term) => {
   Node.div(
     ~attr=Attr.create("class", "code-display"),
     [
+      Node.div(~attr=Attr.create("class", "exp-div"), [e_dom]),
       Node.div(
         ~attr=Attr.create("class", "context-display"),
         [
-          Node.div([e_dom]),
           Node.div(
             ~attr=Attr.create("class", "context-div"),
             mark_dom
@@ -53,7 +53,7 @@ let dom_of_state = (z: zterm, e: term, e': term) => {
               Node.text("Context"),
               Node.hr(),
             ]
-            @ c_en_dom,
+            @ ctx_dom,
           ),
         ],
       ),
