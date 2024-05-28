@@ -8,8 +8,8 @@ UI Screenshot:
 ![image](https://github.com/thomasporter522/dependent-hazelnut/assets/22896135/5452ab5b-bb51-43f6-967e-faadd0b92ce9)
 
 Todos:
-- Complete implementing De Bruijn indices
 - Eta equivalence
+- Propositional equality
 - Basic type hole inference
 - Fix Type : Type
 
@@ -17,3 +17,8 @@ Todos:
 - Better visuals
 
 - Additional type theoretic features
+
+Known Bugs:
+- Visual capture
+- Goal can be out of scope
+- Type of eq can be hidden even with cursor inside

@@ -44,6 +44,7 @@ and mark =
   | Mismatch(term, term)
   | FunNotArrow(option(term))
   | NotTyp(option(term))
+  | Inconsistent
 
 and term =
   | Hole({i: info})

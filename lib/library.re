@@ -523,7 +523,11 @@ let eq_library =
                   Fun(
                     Text("P"),
                     Arrow(Hole, Var("A"), Typ),
-                    Fun(Text("p"), Ap(Var("P"), Var("a")), Var("todo")),
+                    Fun(
+                      Text("p"),
+                      Ap(Var("P"), Var("a")),
+                      Ap(Ap(Ap(Ap(Var("J-eq"), Hole), Hole), Hole), Hole),
+                    ),
                   ),
                 ),
               ),

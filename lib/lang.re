@@ -334,31 +334,92 @@ let consist_name = (x1, x2: name): bool => {
   };
 };
 
+type consist_return = {
+  consistent: bool,
+  reduct1: term,
+  reduct2: term,
+};
+
 // Checks consistency of head-reduced terms
 // if they have the same head, check consistency of the children
-let rec head_consist = (ctx: context, offset: int, t1, t2: term): bool => {
+let rec head_consist =
+        (ctx: context, offset: int, t1, t2: term): consist_return => {
+  // let unmarked =
   switch (t1: term, t2: term) {
   | (Hole(_), _)
   | (_, Hole(_))
   | (Typ(_), Typ(_))
   | (Mark(_), _)
-  | (_, Mark(_)) => true
-  | (Var(r1), Var(r2)) => r1.idx == r2.idx
+  | (_, Mark(_)) => {consistent: true, reduct1: t1, reduct2: t2}
+  | (Var(r1), Var(r2)) => {
+      consistent: r1.idx == r2.idx,
+      reduct1: t1,
+      reduct2: t2,
+    }
   | (Arrow(r1), Arrow(r2)) =>
-    consist(ctx, offset, r1.t1, r2.t1)
-    && consist(ctx, offset + 1, r1.t2, r2.t2)
+    let consist_t1 = consist(ctx, offset, r1.t1, r2.t1);
+    let consist_t2 = consist(ctx, offset + 1, r1.t2, r2.t2);
+    {
+      consistent: consist_t1.consistent && consist_t2.consistent,
+      reduct1: Arrow({...r1, t1: consist_t1.reduct1, t2: consist_t2.reduct1}),
+      reduct2: Arrow({...r2, t1: consist_t1.reduct2, t2: consist_t2.reduct2}),
+    };
   | (Fun(r1), Fun(r2)) =>
-    consist(ctx, offset, r1.t, r2.t) && consist(ctx, offset + 1, r1.e, r2.e)
+    let consist_t = consist(ctx, offset, r1.t, r2.t);
+    let consist_e = consist(ctx, offset + 1, r1.e, r2.e);
+    {
+      consistent: consist_t.consistent && consist_e.consistent,
+      reduct1: Fun({...r1, t: consist_t.reduct1, e: consist_e.reduct1}),
+      reduct2: Fun({...r2, t: consist_t.reduct2, e: consist_e.reduct2}),
+    };
   | (Ap(r1), Ap(r2)) =>
-    consist(ctx, offset, r1.e1, r2.e1) && consist(ctx, offset, r1.e2, r2.e2)
+    let consist_e1 = consist(ctx, offset, r1.e1, r2.e1);
+    let consist_e2 = consist(ctx, offset, r1.e2, r2.e2);
+    {
+      consistent: consist_e1.consistent && consist_e2.consistent,
+      reduct1: Ap({...r1, e1: consist_e1.reduct1, e2: consist_e2.reduct1}),
+      reduct2: Ap({...r2, e1: consist_e1.reduct2, e2: consist_e2.reduct2}),
+    };
   | (Let(r1), Let(r2)) =>
-    consist(ctx, offset, r1.t, r2.t)
-    && consist(ctx, offset, r1.e1, r2.e1)
-    && consist(ctx, offset + 1, r1.e2, r2.e2)
-  | _ => false
+    let consist_t = consist(ctx, offset, r1.t, r2.t);
+    let consist_e1 = consist(ctx, offset, r1.e1, r2.e1);
+    let consist_e2 = consist(ctx, offset + 1, r1.e2, r2.e2);
+    {
+      consistent:
+        consist_t.consistent && consist_e1.consistent && consist_e2.consistent,
+      reduct1:
+        Let({
+          ...r1,
+          t: consist_t.reduct1,
+          e1: consist_e1.reduct1,
+          e2: consist_e2.reduct1,
+        }),
+      reduct2:
+        Let({
+          ...r2,
+          t: consist_t.reduct2,
+          e1: consist_e1.reduct2,
+          e2: consist_e2.reduct2,
+        }),
+    };
+  | _ => {
+      consistent: false,
+      reduct1: Mark({i: default_info, m: Inconsistent, e: t1}),
+      reduct2: Mark({i: default_info, m: Inconsistent, e: t2}),
+    }
+  // let mark_inconsistent = t => Mark({i: default_info, m: Inconsistent, e: t});
+  // if (unmarked.consistent) {
+  //   unmarked;
+  // } else {
+  //   {
+  //     ...unmarked,
+  //     reduct1: mark_inconsistent(unmarked.reduct1),
+  //     reduct2: mark_inconsistent(unmarked.reduct2),
+  //   };
+  // };
   };
 }
-and consist = (ctx: context, offset, t1, t2: term): bool => {
+and consist = (ctx: context, offset, t1, t2: term): consist_return => {
   let (t1', t2') = (
     head_reduce(ctx, offset, t1),
     head_reduce(ctx, offset, t2),
@@ -505,14 +566,21 @@ and ana = (ctx: context, ana_t: term, e: term): term => {
     // the expression if subsumption is used:
     let e = syn(ctx, e); // synthesize the expression
     let e = set_info(e, {...get_info(e), goal: Some(ana_t)}); // add the goal to the info
+    print_endline("getting option...");
     let t = Option.get(get_info(e).syn); // get synthesized type
+    print_endline("gotten!");
     // is it consistent with the analyzed type?
     // we can use head_consist because both arguments are already head reduced
-    if (head_consist(ctx, 0, ana_t, t)) {
+    let consistent = head_consist(ctx, 0, ana_t, t);
+    if (consistent.consistent) {
       e; // if so, do nothing
     } else {
       // if not, mark it
-      apply_mark(i, Mismatch(ana_t, t), e);
+      apply_mark(
+        i,
+        Mismatch(consistent.reduct1, consistent.reduct2),
+        e,
+      );
     };
   };
   switch (e) {
@@ -523,7 +591,7 @@ and ana = (ctx: context, ana_t: term, e: term): term => {
       // if so:
       let t = syn(ctx, r1.t); // process annotation
       // is the annotation consistent with the domain of the goal type?
-      if (consist(ctx, 0, t, r2.t1)) {
+      if (consist(ctx, 0, t, r2.t1).consistent) {
         // if so:
         let tt = get_info(t).syn; // get the synthesized type of the annotation
         let t = mark_if_not_typ(i, tt, t); // ensure it's a typ
