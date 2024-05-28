@@ -40,15 +40,6 @@ let rec pterm_at_cursor = (z: zterm) =>
   | E2Let(_, _, _, z) => pterm_at_cursor(z)
   };
 
-let default_info: info = {
-  ctx: [],
-  goal: None,
-  syn: None,
-  cursed: false,
-  name_cursed: false,
-  cursor_inside: false,
-};
-
 let default_hole: term = Hole({i: default_info});
 
 let rec term_of_pterm = (e: pterm) =>
@@ -326,6 +317,16 @@ let rec head_reduce = (ctx: context, offset: int, e: term): term => {
   };
 };
 
+// let rec full_reduce = (ctx: context, offset: int, e : term) => {
+//   switch(e) {
+//     | Var(_) => head_reduce(ctx, offset, e);
+//     | Ap(r) => {
+//       let e1 = full_reduce(ctx, offset, r.e1);
+//       let e = head_reduce
+//     }
+//   }
+// }
+
 let consist_name = (x1, x2: name): bool => {
   switch (x1: name, x2: name) {
   | (Hole, _)
@@ -566,9 +567,9 @@ and ana = (ctx: context, ana_t: term, e: term): term => {
     // the expression if subsumption is used:
     let e = syn(ctx, e); // synthesize the expression
     let e = set_info(e, {...get_info(e), goal: Some(ana_t)}); // add the goal to the info
-    print_endline("getting option...");
+    // print_endline("getting option...");
     let t = Option.get(get_info(e).syn); // get synthesized type
-    print_endline("gotten!");
+    // print_endline("gotten!");
     // is it consistent with the analyzed type?
     // we can use head_consist because both arguments are already head reduced
     let consistent = head_consist(ctx, 0, ana_t, t);

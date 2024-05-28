@@ -90,3 +90,12 @@ and context_entry = {
   e: option(term),
 }
 and context = list(context_entry);
+
+let default_info: info = {
+  ctx: [],
+  goal: None,
+  syn: None,
+  cursed: false,
+  name_cursed: false,
+  cursor_inside: false,
+};

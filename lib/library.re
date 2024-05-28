@@ -474,8 +474,252 @@ let eq_library =
                 ),
               ),
             ),
+            // Let(
+            //   Text("subst-eq"),
+            //   Arrow(
+            //     Text("A"),
+            //     Typ,
+            //     Arrow(
+            //       Text("a"),
+            //       Var("A"),
+            //       Arrow(
+            //         Text("P"),
+            //         Arrow(Hole, Var("A"), Typ),
+            //         Arrow(
+            //           Text("p"),
+            //           Ap(Var("P"), Var("a")),
+            //           Ap(
+            //             Ap(
+            //               Ap(Var("eq"), Ap(Var("P"), Var("a"))),
+            //               Ap(
+            //                 Ap(
+            //                   Ap(
+            //                     Ap(
+            //                       Ap(
+            //                         Ap(Var("subst"), Var("A")),
+            //                         Var("a"),
+            //                       ),
+            //                       Var("a"),
+            //                     ),
+            //                     Var("P"),
+            //                   ),
+            //                   Ap(Ap(Var("refl"), Var("A")), Var("a")),
+            //                 ),
+            //                 Var("p"),
+            //               ),
+            //             ),
+            //             Var("p"),
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            //   Fun(
+            //     Text("A"),
+            //     Typ,
+            //     Fun(
+            //       Text("a"),
+            //       Var("A"),
+            //       Fun(
+            //         Text("P"),
+            //         Arrow(Hole, Var("A"), Typ),
+            //         Fun(
+            //           Text("p"),
+            //           Ap(Var("P"), Var("a")),
+            //           Let(
+            //             Text("eq1"),
+            //             Ap(
+            //               Ap(
+            //                 Ap(Var("eq"), Hole),
+            //                 Ap(
+            //                   Ap(
+            //                     Ap(
+            //                       Ap(
+            //                         Ap(
+            //                           Ap(Var("J"), Var("A")),
+            //                           Fun(
+            //                             Text("x"),
+            //                             Var("A"),
+            //                             Fun(
+            //                               Text("y"),
+            //                               Var("A"),
+            //                               Fun(
+            //                                 Hole,
+            //                                 Ap(
+            //                                   Ap(
+            //                                     Ap(Var("eq"), Var("A")),
+            //                                     Var("x"),
+            //                                   ),
+            //                                   Var("y"),
+            //                                 ),
+            //                                 Arrow(
+            //                                   Hole,
+            //                                   Ap(Var("P"), Var("x")),
+            //                                   Ap(Var("P"), Var("y")),
+            //                                 ),
+            //                               ),
+            //                             ),
+            //                           ),
+            //                         ),
+            //                         Fun(
+            //                           Text("a"),
+            //                           Var("A"),
+            //                           Fun(
+            //                             Text("p"),
+            //                             Ap(Var("P"), Var("a")),
+            //                             Var("p"),
+            //                           ),
+            //                         ),
+            //                       ),
+            //                       Var("a"),
+            //                     ),
+            //                     Var("a"),
+            //                   ),
+            //                   Ap(Ap(Var("refl"), Var("A")), Var("a")),
+            //                 ),
+            //               ),
+            //               Fun(
+            //                 Text("z"),
+            //                 Ap(Var("P"), Var("a")),
+            //                 Var("z"),
+            //               ),
+            //             ),
+            //             Ap(
+            //               Ap(
+            //                 Ap(
+            //                   Ap(Var("J-eq"), Var("A")),
+            //                   Fun(
+            //                     Text("x"),
+            //                     Var("A"),
+            //                     Fun(
+            //                       Text("y"),
+            //                       Var("A"),
+            //                       Fun(
+            //                         Hole,
+            //                         Ap(
+            //                           Ap(
+            //                             Ap(Var("eq"), Var("A")),
+            //                             Var("x"),
+            //                           ),
+            //                           Var("y"),
+            //                         ),
+            //                         Arrow(
+            //                           Hole,
+            //                           Ap(Var("P"), Var("x")),
+            //                           Ap(Var("P"), Var("y")),
+            //                         ),
+            //                       ),
+            //                     ),
+            //                   ),
+            //                 ),
+            //                 Fun(
+            //                   Text("a"),
+            //                   Var("A"),
+            //                   Fun(
+            //                     Text("p"),
+            //                     Ap(Var("P"), Var("a")),
+            //                     Var("p"),
+            //                   ),
+            //                 ),
+            //               ),
+            //               Var("a"),
+            //             ),
+            //             Let(
+            //               Text("go"),
+            //               Hole,
+            //               Hole,
+            //               Ap(
+            //                 Ap(
+            //                   Ap(
+            //                     Ap(
+            //                       Ap(
+            //                         Ap(
+            //                           Var("subst"),
+            //                           Arrow(
+            //                             Hole,
+            //                             Ap(Var("P"), Var("a")),
+            //                             Ap(Var("P"), Var("a")),
+            //                           ),
+            //                         ),
+            //                         Ap(
+            //                           Ap(
+            //                             Ap(
+            //                               Ap(
+            //                                 Ap(
+            //                                   Ap(Var("J"), Var("A")),
+            //                                   Fun(
+            //                                     Text("x"),
+            //                                     Var("A"),
+            //                                     Fun(
+            //                                       Text("y"),
+            //                                       Var("A"),
+            //                                       Fun(
+            //                                         Hole,
+            //                                         Ap(
+            //                                           Ap(
+            //                                             Ap(
+            //                                               Var("eq"),
+            //                                               Var("A"),
+            //                                             ),
+            //                                             Var("x"),
+            //                                           ),
+            //                                           Var("y"),
+            //                                         ),
+            //                                         Arrow(
+            //                                           Hole,
+            //                                           Ap(
+            //                                             Var("P"),
+            //                                             Var("x"),
+            //                                           ),
+            //                                           Ap(
+            //                                             Var("P"),
+            //                                             Var("y"),
+            //                                           ),
+            //                                         ),
+            //                                       ),
+            //                                     ),
+            //                                   ),
+            //                                 ),
+            //                                 Fun(
+            //                                   Text("a"),
+            //                                   Var("A"),
+            //                                   Fun(
+            //                                     Text("p"),
+            //                                     Ap(Var("P"), Var("a")),
+            //                                     Var("p"),
+            //                                   ),
+            //                                 ),
+            //                               ),
+            //                               Var("a"),
+            //                             ),
+            //                             Var("a"),
+            //                           ),
+            //                           Ap(
+            //                             Ap(Var("refl"), Var("A")),
+            //                             Var("a"),
+            //                           ),
+            //                         ),
+            //                       ),
+            //                       Fun(
+            //                         Text("x"),
+            //                         Ap(Var("P"), Var("a")),
+            //                         Var("x"),
+            //                       ),
+            //                     ),
+            //                     Hole,
+            //                   ),
+            //                   Var("eq1"),
+            //                 ),
+            //                 Hole,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
             Let(
-              Text("subst-eq"),
+              Text("sym"),
               Arrow(
                 Text("A"),
                 Typ,
@@ -483,32 +727,17 @@ let eq_library =
                   Text("a"),
                   Var("A"),
                   Arrow(
-                    Text("P"),
-                    Arrow(Hole, Var("A"), Typ),
+                    Text("b"),
+                    Var("A"),
                     Arrow(
-                      Text("p"),
-                      Ap(Var("P"), Var("a")),
+                      Hole,
                       Ap(
-                        Ap(
-                          Ap(Var("eq"), Ap(Var("P"), Var("a"))),
-                          Ap(
-                            Ap(
-                              Ap(
-                                Ap(
-                                  Ap(
-                                    Ap(Var("subst"), Var("A")),
-                                    Var("a"),
-                                  ),
-                                  Var("a"),
-                                ),
-                                Var("P"),
-                              ),
-                              Ap(Ap(Var("refl"), Var("A")), Var("a")),
-                            ),
-                            Var("p"),
-                          ),
-                        ),
-                        Var("p"),
+                        Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                        Var("b"),
+                      ),
+                      Ap(
+                        Ap(Ap(Var("eq"), Var("A")), Var("b")),
+                        Var("a"),
                       ),
                     ),
                   ),
@@ -521,25 +750,279 @@ let eq_library =
                   Text("a"),
                   Var("A"),
                   Fun(
-                    Text("P"),
-                    Arrow(Hole, Var("A"), Typ),
+                    Text("b"),
+                    Var("A"),
                     Fun(
-                      Text("p"),
-                      Ap(Var("P"), Var("a")),
-                      Ap(Ap(Ap(Ap(Var("J-eq"), Hole), Hole), Hole), Hole),
+                      Text("f1"),
+                      Ap(
+                        Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                        Var("b"),
+                      ),
+                      Ap(
+                        Ap(
+                          Ap(
+                            Ap(
+                              Ap(Ap(Var("subst"), Var("A")), Var("a")),
+                              Var("b"),
+                            ),
+                            Fun(
+                              Text("x"),
+                              Var("A"),
+                              Ap(
+                                Ap(Ap(Var("eq"), Var("A")), Var("x")),
+                                Var("a"),
+                              ),
+                            ),
+                          ),
+                          Var("f1"),
+                        ),
+                        Ap(Ap(Var("refl"), Var("A")), Var("a")),
+                      ),
                     ),
                   ),
                 ),
               ),
-              Hole,
+              Let(
+                Text("trans"),
+                Arrow(
+                  Text("A"),
+                  Typ,
+                  Arrow(
+                    Text("a"),
+                    Var("A"),
+                    Arrow(
+                      Text("b"),
+                      Var("A"),
+                      Arrow(
+                        Text("c"),
+                        Var("A"),
+                        Arrow(
+                          Hole,
+                          Ap(
+                            Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                            Var("b"),
+                          ),
+                          Arrow(
+                            Hole,
+                            Ap(
+                              Ap(Ap(Var("eq"), Var("A")), Var("b")),
+                              Var("c"),
+                            ),
+                            Ap(
+                              Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                              Var("c"),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Fun(
+                  Text("A"),
+                  Typ,
+                  Fun(
+                    Text("a"),
+                    Var("A"),
+                    Fun(
+                      Text("b"),
+                      Var("A"),
+                      Fun(
+                        Text("c"),
+                        Var("A"),
+                        Fun(
+                          Text("f1"),
+                          Ap(
+                            Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                            Var("b"),
+                          ),
+                          Fun(
+                            Text("f2"),
+                            Ap(
+                              Ap(Ap(Var("eq"), Var("A")), Var("b")),
+                              Var("c"),
+                            ),
+                            Ap(
+                              Ap(
+                                Ap(
+                                  Ap(
+                                    Ap(
+                                      Ap(Var("subst"), Var("A")),
+                                      Var("b"),
+                                    ),
+                                    Var("c"),
+                                  ),
+                                  Fun(
+                                    Text("x"),
+                                    Var("A"),
+                                    Ap(
+                                      Ap(
+                                        Ap(Var("eq"), Var("A")),
+                                        Var("a"),
+                                      ),
+                                      Var("x"),
+                                    ),
+                                  ),
+                                ),
+                                Var("f2"),
+                              ),
+                              Var("f1"),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Let(
+                  Text("cong"),
+                  Arrow(
+                    Text("A"),
+                    Typ,
+                    Arrow(
+                      Text("B"),
+                      Typ,
+                      Arrow(
+                        Text("a"),
+                        Var("A"),
+                        Arrow(
+                          Text("b"),
+                          Var("A"),
+                          Arrow(
+                            Text("f"),
+                            Arrow(Hole, Var("A"), Var("B")),
+                            Arrow(
+                              Hole,
+                              Ap(
+                                Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                                Var("b"),
+                              ),
+                              Ap(
+                                Ap(
+                                  Ap(Var("eq"), Var("B")),
+                                  Ap(Var("f"), Var("a")),
+                                ),
+                                Ap(Var("f"), Var("b")),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Fun(
+                    Text("A"),
+                    Typ,
+                    Fun(
+                      Text("B"),
+                      Typ,
+                      Fun(
+                        Text("a"),
+                        Var("A"),
+                        Fun(
+                          Text("b"),
+                          Var("A"),
+                          Fun(
+                            Text("f"),
+                            Arrow(Hole, Var("A"), Var("B")),
+                            Fun(
+                              Text("f1"),
+                              Ap(
+                                Ap(Ap(Var("eq"), Var("A")), Var("a")),
+                                Var("b"),
+                              ),
+                              Ap(
+                                Ap(
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(Var("subst"), Var("A")),
+                                        Var("a"),
+                                      ),
+                                      Var("b"),
+                                    ),
+                                    Fun(
+                                      Text("x"),
+                                      Var("A"),
+                                      Ap(
+                                        Ap(
+                                          Ap(Var("eq"), Var("B")),
+                                          Ap(Var("f"), Var("a")),
+                                        ),
+                                        Ap(Var("f"), Var("x")),
+                                      ),
+                                    ),
+                                  ),
+                                  Var("f1"),
+                                ),
+                                Ap(
+                                  Ap(Var("refl"), Var("B")),
+                                  Ap(Var("f"), Var("a")),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Let(
+                    Text("nat"),
+                    Typ,
+                    Hole,
+                    Let(
+                      Text("Z"),
+                      Var("nat"),
+                      Hole,
+                      Let(
+                        Text("S"),
+                        Arrow(Hole, Var("nat"), Var("nat")),
+                        Hole,
+                        Let(
+                          Text("nat-ind"),
+                          Arrow(
+                            Text("P"),
+                            Arrow(Hole, Var("nat"), Typ),
+                            Arrow(
+                              Hole,
+                              Ap(Var("P"), Var("Z")),
+                              Arrow(
+                                Hole,
+                                Arrow(
+                                  Text("x"),
+                                  Var("nat"),
+                                  Arrow(
+                                    Hole,
+                                    Ap(Var("P"), Var("x")),
+                                    Ap(Var("P"), Ap(Var("S"), Var("x"))),
+                                  ),
+                                ),
+                                Arrow(
+                                  Text("n"),
+                                  Var("nat"),
+                                  Ap(Var("P"), Var("n")),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Hole,
+                          Hole,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
       ),
     ),
+    // ),
   );
 
 let library = eq_library /*            */;
+let context = [];
 //   Let(
 //     Text("nat"),
 //     Typ,

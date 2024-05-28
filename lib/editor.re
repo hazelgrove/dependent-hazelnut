@@ -36,6 +36,7 @@ type edit_action =
   | Save;
 
 let initial_state: zterm = library;
+let initial_context: context = context;
 
 let backspace = (s: string) =>
   String.sub(s, ~pos=0, ~len=String.length(s) - 1);
