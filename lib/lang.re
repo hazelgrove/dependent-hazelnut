@@ -528,6 +528,7 @@ let rec syn = (ctx: context, e: term): term => {
       // if not:
       let e1 = apply_mark(i, FunNotArrow(t1), e1); // mark the left side
       let e2 = ana(ctx, default_hole, r.e2); // analyze the right side against hole
+      let i = {...i, syn: Some(default_hole)}; // and synthesize Hole
       Ap({i, e1, e2});
     | Some(Arrow(r1)) =>
       // if so:

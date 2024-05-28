@@ -1006,7 +1006,53 @@ let eq_library =
                             ),
                           ),
                           Hole,
-                          Hole,
+                          Let(
+                            Text("nat-ind-eq"),
+                            Arrow(
+                              Text("P"),
+                              Arrow(Hole, Var("nat"), Typ),
+                              Arrow(
+                                Text("pZ"),
+                                Ap(Var("P"), Var("Z")),
+                                Arrow(
+                                  Text("pS"),
+                                  Arrow(
+                                    Text("x"),
+                                    Var("nat"),
+                                    Arrow(
+                                      Hole,
+                                      Ap(Var("P"), Var("x")),
+                                      Ap(
+                                        Var("P"),
+                                        Ap(Var("S"), Var("x")),
+                                      ),
+                                    ),
+                                  ),
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Var("eq"),
+                                        Ap(Var("P"), Var("Z")),
+                                      ),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("nat-ind"), Var("P")),
+                                            Var("pZ"),
+                                          ),
+                                          Var("pS"),
+                                        ),
+                                        Var("Z"),
+                                      ),
+                                    ),
+                                    Var("pZ"),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Hole,
+                            Hole,
+                          ),
                         ),
                       ),
                     ),
