@@ -1007,7 +1007,7 @@ let eq_library =
                           ),
                           Hole,
                           Let(
-                            Text("nat-ind-eq"),
+                            Text("nat-ind-eq-Z"),
                             Arrow(
                               Text("P"),
                               Arrow(Hole, Var("nat"), Typ),
@@ -1051,7 +1051,256 @@ let eq_library =
                               ),
                             ),
                             Hole,
-                            Hole,
+                            Let(
+                              Text("nat-ind-eq-S"),
+                              Arrow(
+                                Text("P"),
+                                Arrow(Hole, Var("nat"), Typ),
+                                Arrow(
+                                  Text("pZ"),
+                                  Ap(Var("P"), Var("Z")),
+                                  Arrow(
+                                    Text("pS"),
+                                    Arrow(
+                                      Text("x"),
+                                      Var("nat"),
+                                      Arrow(
+                                        Hole,
+                                        Ap(Var("P"), Var("x")),
+                                        Ap(
+                                          Var("P"),
+                                          Ap(Var("S"), Var("x")),
+                                        ),
+                                      ),
+                                    ),
+                                    Arrow(
+                                      Text("x"),
+                                      Var("nat"),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Var("eq"),
+                                            Ap(
+                                              Var("P"),
+                                              Ap(Var("S"), Var("x")),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Var("nat-ind"),
+                                                  Var("P"),
+                                                ),
+                                                Var("pZ"),
+                                              ),
+                                              Var("pS"),
+                                            ),
+                                            Ap(Var("S"), Var("x")),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(Var("pS"), Var("x")),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Var("nat-ind"),
+                                                  Var("P"),
+                                                ),
+                                                Var("pZ"),
+                                              ),
+                                              Var("pS"),
+                                            ),
+                                            Var("x"),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Hole,
+                              Let(
+                                Text("plus"),
+                                Arrow(
+                                  Hole,
+                                  Var("nat"),
+                                  Arrow(Hole, Var("nat"), Var("nat")),
+                                ),
+                                Fun(
+                                  Text("n"),
+                                  Var("nat"),
+                                  Fun(
+                                    Text("m"),
+                                    Var("nat"),
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Var("nat-ind"),
+                                            Fun(Hole, Hole, Var("nat")),
+                                          ),
+                                          Var("m"),
+                                        ),
+                                        Fun(Hole, Hole, Var("S")),
+                                      ),
+                                      Var("n"),
+                                    ),
+                                  ),
+                                ),
+                                Let(
+                                  Text("plus-Z"),
+                                  Arrow(
+                                    Text("n"),
+                                    Var("nat"),
+                                    Ap(
+                                      Ap(
+                                        Ap(Var("eq"), Var("nat")),
+                                        Ap(
+                                          Ap(Var("plus"), Var("n")),
+                                          Var("Z"),
+                                        ),
+                                      ),
+                                      Var("n"),
+                                    ),
+                                  ),
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Var("nat-ind"),
+                                        Fun(
+                                          Text("n"),
+                                          Var("nat"),
+                                          Ap(
+                                            Ap(
+                                              Ap(Var("eq"), Var("nat")),
+                                              Ap(
+                                                Ap(Var("plus"), Var("n")),
+                                                Var("Z"),
+                                              ),
+                                            ),
+                                            Var("n"),
+                                          ),
+                                        ),
+                                      ),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Var("nat-ind-eq-Z"),
+                                            Fun(Hole, Hole, Var("nat")),
+                                          ),
+                                          Var("Z"),
+                                        ),
+                                        Fun(Hole, Hole, Var("S")),
+                                      ),
+                                    ),
+                                    Fun(
+                                      Text("x"),
+                                      Var("nat"),
+                                      Fun(
+                                        Text("f1"),
+                                        Ap(
+                                          Fun(
+                                            Text("n"),
+                                            Var("nat"),
+                                            Ap(
+                                              Ap(
+                                                Ap(Var("eq"), Var("nat")),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("n")),
+                                                  Var("Z"),
+                                                ),
+                                              ),
+                                              Var("n"),
+                                            ),
+                                          ),
+                                          Var("x"),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("trans"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                    Var("Z"),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Var("S"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("x"),
+                                                    ),
+                                                    Var("Z"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Ap(Var("S"), Var("x")),
+                                            ),
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("nat-ind-eq-S"),
+                                                    Fun(
+                                                      Hole,
+                                                      Hole,
+                                                      Var("nat"),
+                                                    ),
+                                                  ),
+                                                  Var("Z"),
+                                                ),
+                                                Fun(Hole, Hole, Var("S")),
+                                              ),
+                                              Var("x"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Var("cong"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("x"),
+                                                    ),
+                                                    Var("Z"),
+                                                  ),
+                                                ),
+                                                Var("x"),
+                                              ),
+                                              Var("S"),
+                                            ),
+                                            Var("f1"),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Hole,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
