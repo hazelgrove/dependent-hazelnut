@@ -14,6 +14,7 @@ UI Screenshot:
 
 ### Todos
 - Eta equivalence
+- Full normalization
 - Basic type hole inference
 - Fix Type : Type
 
