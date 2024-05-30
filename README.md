@@ -21,7 +21,12 @@ UI Screenshot:
 - Better visuals
 
 - Additional type theoretic features
+  - Inductive declarations
+  - Record types
+  - Quotient types
+  - Gauge types
 
 Known Bugs:
 - Visual capture
 - Goal can be out of scope
+- Misleading projections
