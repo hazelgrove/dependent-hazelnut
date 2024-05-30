@@ -192,6 +192,39 @@ let rec dom_of_term =
   //     dom_of_term(c, en, completes, e),
   //     text(")"),
   //   ])
+  | Ap({
+      i: _,
+      e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: e1}), e2}),
+      e2: Fun({i: fi1, x, t: t1, e: Fun({i: fi2, x: y, t: t2, e: body})}),
+    })
+      when
+        r.x == "nat-ind"
+        && !get_info(t1).cursor_inside
+        && !get_info(t2).cursor_inside
+        && !get_info(t1).cursed
+        && !get_info(t2).cursed
+        && !fi1.cursed
+        && !fi2.cursed
+        && !fi1.name_cursed
+        && !fi2.name_cursed
+        && !i2.cursed
+        && !i3.cursed =>
+    block_indent(
+      [dom_of_term(Var(r)), text(" "), dom_of_term(e1, ~inline=true)],
+      Node.div([
+        block_indent([text("Z"), text("→")], dom_of_term(e2)),
+        block_indent(
+          [
+            text("S" ++ " "),
+            dom_of_name(x),
+            text("→"),
+            dom_of_name(y),
+            text("→"),
+          ],
+          dom_of_term(body),
+        ),
+      ]),
+    )
   | Ap(r) =>
     let dom =
       oneline([
