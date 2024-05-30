@@ -59,7 +59,14 @@ let rec dom_of_term =
       cursor([dom_of_term(~under_cursor=true, ~inline, e)])
     | Hole(_) => hole
     | Typ(_) => text("◻")
-    | Mark(r) => mark([dom_of_term(~inline, r.e)])
+    | Mark(r) =>
+      mark([
+        dom_of_term(
+          ~inline,
+          ~parens_info={...default_parens_info, no_parens: true},
+          r.e,
+        ),
+      ])
     | Var(r) =>
       // I think this is buggy, the context is wrong
       // let rec check_shadowed = (idx, ctx) =>

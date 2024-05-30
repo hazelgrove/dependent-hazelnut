@@ -26,7 +26,9 @@ let action_of_key =
   | KeyB => Some(Edit(AddString(shift ? "B" : "b")))
   | KeyC => Some(Edit(AddString(shift ? "C" : "c")))
   | KeyD => Some(Edit(AddString(shift ? "D" : "d")))
-  | KeyE => Some(Edit(AddString(shift ? "E" : "e")))
+  | KeyE =>
+    control
+      ? Some(Edit(Equational)) : Some(Edit(AddString(shift ? "E" : "e")))
   | KeyF =>
     control
       ? Some(Edit(FillVar)) : Some(Edit(AddString(shift ? "F" : "f")))

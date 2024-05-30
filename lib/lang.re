@@ -129,7 +129,8 @@ let rec place_cursor = (z: zterm, e: term): term => {
   let curse_inside = (i: info) => {...i, cursor_inside: true};
   switch (z, e) {
   | (Cursor(_), e) => set_info(e, {...get_info(e), cursed: true})
-  | (z, Mark(r)) => Mark({...r, e: place_cursor(z, r.e)})
+  | (z, Mark(r)) =>
+    Mark({...r, i: curse_inside(r.i), e: place_cursor(z, r.e)})
   | (XArrow(_, _, _), Arrow(r)) => Arrow({...r, i: name_curse(r.i)})
   | (LArrow(_, z, _), Arrow(r)) =>
     Arrow({...r, i: curse_inside(r.i), t1: place_cursor(z, r.t1)})

@@ -30,6 +30,7 @@ type edit_action =
   | GiveTerm(pterm)
   | FillVar
   | Refine
+  | Equational
   | MakeLemma
   | Auto
   | FullAuto
@@ -119,6 +120,7 @@ let rec apply_zterm = (a: edit_action, z: zterm, ec: term): zterm => {
     print_endline("not implemented");
     z; //fill_var(z)
   | (Refine, z) => refine(z, ec)
+  | (Equational, z) => equational(z, ec)
   | (MakeLemma, z) =>
     print_endline("not implemented");
     z; //make_lemma(z)

@@ -17,12 +17,12 @@ let rec apply_at_cursor_zterm = (z: zterm, f: pterm => zterm) =>
   | LArrow(x, z, t2) => LArrow(x, apply_at_cursor_zterm(z, f), t2)
   | RArrow(x, t1, z) => RArrow(x, t1, apply_at_cursor_zterm(z, f))
   | XFun(z, t, e) => XFun(z, t, e)
-  | TFun(x, z, e) => TFun(x, z, e)
+  | TFun(x, z, e) => TFun(x, apply_at_cursor_zterm(z, f), e)
   | EFun(x, t, z) => EFun(x, t, apply_at_cursor_zterm(z, f))
   | LAp(z, e) => LAp(apply_at_cursor_zterm(z, f), e)
   | RAp(e, z) => RAp(e, apply_at_cursor_zterm(z, f))
   | XLet(z, t, e1, e2) => XLet(z, t, e1, e2)
-  | TLet(x, z, e1, e2) => TLet(x, z, e1, e2)
+  | TLet(x, z, e1, e2) => TLet(x, apply_at_cursor_zterm(z, f), e1, e2)
   | E1Let(x, t, z, e2) => E1Let(x, t, apply_at_cursor_zterm(z, f), e2)
   | E2Let(x, t, e1, z) => E2Let(x, t, e1, apply_at_cursor_zterm(z, f))
   };
@@ -40,6 +40,15 @@ let give_term = (z: zterm, e: pterm) => {
   let f = (e': pterm) =>
     switch (e') {
     | Hole => Cursor(e)
+    | e' => Cursor(e')
+    };
+  apply_at_cursor_zterm(z, f);
+};
+
+let give_zterm = (z: zterm, e: zterm) => {
+  let f = (e': pterm) =>
+    switch (e') {
+    | Hole => e
     | e' => Cursor(e')
     };
   apply_at_cursor_zterm(z, f);
@@ -77,6 +86,96 @@ let refine = (z: zterm, ec: term) => {
       give_term(z, Fun(Text(var_name), pterm_of_term(r.t1), Hole)),
     );
   | _ => z
+  };
+};
+
+let rec equational_subterm = (z: zterm, ec: term): zterm => {
+  switch (z) {
+  | LAp(
+      LAp(
+        LAp(LAp(LAp(RAp(Ap(Ap(Var("eq-step"), t), _), za), _), _), c),
+        _,
+      ),
+      e2,
+    ) =>
+    switch (get_info(ec).syn) {
+    | None => z
+    | Some(zat) =>
+      let zaa = pterm_of_term(ec);
+      let zat = pterm_of_term(zat);
+      let zaf_var = "x"; // TODO: MAKE THIS FRESH
+      let zaf: pterm =
+        Fun(
+          Text(zaf_var),
+          zat,
+          pterm_of_zterm(
+            apply_at_cursor_zterm(za, _ => Cursor(Var(zaf_var))),
+          ),
+        );
+      LAp(
+        LAp(
+          LAp(
+            LAp(
+              RAp(Ap(Ap(Ap(Var("eq-step"), t), zat), zaa), Cursor(Hole)),
+              zaf,
+            ),
+            c,
+          ),
+          Hole,
+        ),
+        e2,
+      );
+    }
+  | Cursor(z) => Cursor(z)
+  | XArrow(z, t1, t2) => XArrow(z, t1, t2)
+  | LArrow(x, z, t2) => LArrow(x, equational_subterm(z, ec), t2)
+  | RArrow(x, t1, z) => RArrow(x, t1, equational_subterm(z, ec))
+  | XFun(z, t, e) => XFun(z, t, e)
+  | TFun(x, z, e) => TFun(x, equational_subterm(z, ec), e)
+  | EFun(x, t, z) => EFun(x, t, equational_subterm(z, ec))
+  | LAp(z, e) => LAp(equational_subterm(z, ec), e)
+  | RAp(e, z) => RAp(e, equational_subterm(z, ec))
+  | XLet(z, t, e1, e2) => XLet(z, t, e1, e2)
+  | TLet(x, z, e1, e2) => TLet(x, equational_subterm(z, ec), e1, e2)
+  | E1Let(x, t, z, e2) => E1Let(x, t, equational_subterm(z, ec), e2)
+  | E2Let(x, t, e1, z) => E2Let(x, t, e1, equational_subterm(z, ec))
+  };
+};
+
+let equational = (z: zterm, ec: term): zterm => {
+  switch (get_info(ec).goal) {
+  | Some(
+      Ap({
+        i: _,
+        e1: Ap({i: _, e1: Ap({i: _, e1: Var(r), e2: e1}), e2}),
+        e2: e3,
+      }),
+    )
+      when r.x == "eq" =>
+    switch (ec) {
+    | Hole(_) =>
+      let t = pterm_of_term(e1);
+      let a = pterm_of_term(e2);
+      let b = pterm_of_term(e3);
+      give_zterm(
+        z,
+        LAp(
+          LAp(
+            LAp(
+              LAp(
+                RAp(Ap(Ap(Ap(Var("eq-step"), t), t), a), Cursor(Hole)),
+                Fun(Text("x"), t, Var("x")),
+              ),
+              b,
+            ),
+            Hole,
+          ),
+          Hole,
+        ),
+      );
+    | _ => equational_subterm(z, ec)
+    }
+  | _ => equational_subterm(z, ec)
   };
 };
 
