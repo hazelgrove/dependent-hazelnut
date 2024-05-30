@@ -15,12 +15,20 @@ let dom_of_state = (z: zterm, e: term, e': term) => {
   let goal_dom =
     switch (i.goal) {
     | None => Node.Text("-")
-    | Some(goal) => dom_of_term(goal)
+    | Some(goal) =>
+      dom_of_term(
+        ~parens_info={...default_parens_info, no_parens: true},
+        goal,
+      )
     };
   let syn_dom =
     switch (i.syn) {
     | None => Node.Text("-")
-    | Some(syn) => dom_of_term(syn)
+    | Some(syn) =>
+      dom_of_term(
+        ~parens_info={...default_parens_info, no_parens: true},
+        syn,
+      )
     };
   let rec top_marks = z =>
     switch (z) {
