@@ -33,11 +33,13 @@ type parens_info = {
   arrow_assoc: bool,
   fun_assoc: bool,
   ap_assoc: bool,
+  no_parens: bool,
 };
 let default_parens_info = {
   arrow_assoc: false,
   fun_assoc: false,
   ap_assoc: false,
+  no_parens: false,
 };
 
 let parens = dom => oneline([text("("), dom, text(")")]);
@@ -49,282 +51,310 @@ let rec dom_of_term =
           ~parens_info: parens_info=default_parens_info,
           e: term,
         )
-        : Node.t =>
-  switch (e) {
-  | Hole(r) when r.i.cursed => cursor_hole
-  | e when get_info(e).cursed && !under_cursor =>
-    cursor([dom_of_term(~under_cursor=true, ~inline, e)])
-  | Hole(_) => hole
-  | Typ(_) => text("◻")
-  | Mark(r) => mark([dom_of_term(~inline, r.e)])
-  | Var(r) =>
-    // I think this is buggy, the context is wrong
-    // let rec check_shadowed = (idx, ctx) =>
-    //   switch (ctx) {
-    //   | [] => false
-    //   | [c, ..._] when c.x == Text(r.x) => r.idx != Some(idx)
-    //   | [_, ...ctx] => check_shadowed(idx + 1, ctx)
-    //   };
-    // let string_of_idx =
-    //   switch (r.idx) {
-    //   | None => ""
-    //   | Some(idx) =>
-    //     if (check_shadowed(0, r.i.ctx)) {
-    //       "." ++ string_of_int(idx);
-    //     } else {
-    //       "";
-    //     }
-    //   };
-    // let out_of_scope_message =
-    //   switch (r.idx) {
-    //   | None => ""
-    //   | Some(idx) =>
-    //     switch (List.nth(r.i.ctx, idx).x) {
-    //     | Hole => " (out of scope)"
-    //     | _ => ""
-    //     }
-    //   };
-    text(text_of_text(r.x)) // ++ string_of_idx);
-  | Arrow(r) =>
-    let dom = {
-      let binding =
-        switch (r.x) {
-        | Hole when !(r.i.name_cursed || r.i.cursed) => []
-        | _ => [dom_of_name(r.x, ~cursed=r.i.name_cursed), text(":")]
-        };
-      oneline(
-        binding
-        @ [
-          dom_of_term(~inline=true, r.t1),
-          text("⇒"),
-          dom_of_term(
-            ~inline=true,
-            ~parens_info={...default_parens_info, arrow_assoc: true},
-            r.t2,
-          ),
-        ],
-      );
-    };
-    if (parens_info.arrow_assoc || under_cursor) {
-      dom;
-    } else {
-      parens(dom);
-    };
-  | Fun(r) =>
-    let dom1 = [
-      dom_of_name(r.x, ~cursed=r.i.name_cursed),
-      text(":"),
-      dom_of_term(~inline=true, r.t),
-      text("→"),
-    ];
-    let dom2 =
-      dom_of_term(
-        ~inline,
-        ~parens_info={...default_parens_info, fun_assoc: true},
-        r.e,
-      );
-    if (inline) {
-      let dom = oneline(dom1 @ [dom2]);
-      if (parens_info.fun_assoc || under_cursor) {
+        : Node.t => {
+  let dom =
+    switch (e) {
+    | Hole(r) when r.i.cursed => cursor_hole
+    | e when get_info(e).cursed && !under_cursor =>
+      cursor([dom_of_term(~under_cursor=true, ~inline, e)])
+    | Hole(_) => hole
+    | Typ(_) => text("◻")
+    | Mark(r) => mark([dom_of_term(~inline, r.e)])
+    | Var(r) =>
+      // I think this is buggy, the context is wrong
+      // let rec check_shadowed = (idx, ctx) =>
+      //   switch (ctx) {
+      //   | [] => false
+      //   | [c, ..._] when c.x == Text(r.x) => r.idx != Some(idx)
+      //   | [_, ...ctx] => check_shadowed(idx + 1, ctx)
+      //   };
+      // let string_of_idx =
+      //   switch (r.idx) {
+      //   | None => ""
+      //   | Some(idx) =>
+      //     if (check_shadowed(0, r.i.ctx)) {
+      //       "." ++ string_of_int(idx);
+      //     } else {
+      //       "";
+      //     }
+      //   };
+      // let out_of_scope_message =
+      //   switch (r.idx) {
+      //   | None => ""
+      //   | Some(idx) =>
+      //     switch (List.nth(r.i.ctx, idx).x) {
+      //     | Hole => " (out of scope)"
+      //     | _ => ""
+      //     }
+      //   };
+      text(text_of_text(r.x)) // ++ string_of_idx);
+    | Arrow(r) =>
+      let dom = {
+        let binding =
+          switch (r.x) {
+          | Hole when !(r.i.name_cursed || r.i.cursed) => []
+          | _ => [dom_of_name(r.x, ~cursed=r.i.name_cursed), text(":")]
+          };
+        oneline(
+          binding
+          @ [
+            dom_of_term(~inline=true, r.t1),
+            text("⇒"),
+            dom_of_term(
+              ~inline=true,
+              ~parens_info={...default_parens_info, arrow_assoc: true},
+              r.t2,
+            ),
+          ],
+        );
+      };
+      if (parens_info.arrow_assoc || under_cursor || parens_info.no_parens) {
         dom;
       } else {
         parens(dom);
       };
-    } else {
-      block_indent(dom1, dom2);
-    };
-  | Ap({
-      i: i1,
-      e1: Ap({i: i2, e1: Var(r), e2: t1}),
-      e2: Fun({i: i3, x: Text(x), t: t2, e: body}),
-    })
-      when
-        r.x == "exists"
-        && terms_equal(t1, t2)
-        && !(
-             i1.cursed
-             || i2.cursed
-             || r.i.cursed
-             || i3.cursed
-             || i3.name_cursed
-             || get_info(t2).cursed
-             || get_info(t2).cursor_inside
-           ) =>
-    oneline([
-      text("("),
-      dom_of_term(Var(r)),
-      dom_of_name(Text(x), ~cursed=i3.name_cursed),
-      text(":"),
-      dom_of_term(t1),
-      text("."),
-      dom_of_term(~inline=true, body),
-      text(")"),
-    ])
-  | Ap({
-      i: _,
-      e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: t1}), e2: t2}),
-      e2: t3,
-    })
-      when
-        r.x == "eq"
-        && !(
-             //  i1.cursed ||
-             i2.cursed
-             || i3.cursed
-             || r.i.cursed
-             || get_info(t1).cursed
-             || get_info(t1).cursor_inside
-           ) =>
-    oneline([
-      text("("),
-      dom_of_term(t2),
-      dom_of_term(Var(r)),
-      // text("["),
-      // dom_of_term(c, en, completes, t1),
-      // text("]"),
-      dom_of_term(t3),
-      text(")"),
-    ])
-  // | Ap(Ap(Var("refl"), _), e) =>
-  //   oneline([
-  //     dom_of_term(c, en, completes, Var("refl")),
-  //     text("("),
-  //     dom_of_term(c, en, completes, e),
-  //     text(")"),
-  //   ])
-  | Ap({
-      i: _,
-      e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: e1}), e2}),
-      e2: Fun({i: fi1, x, t: t1, e: Fun({i: fi2, x: y, t: t2, e: body})}),
-    })
-      when
-        r.x == "nat-ind"
-        && !get_info(t1).cursor_inside
-        && !get_info(t2).cursor_inside
-        && !get_info(t1).cursed
-        && !get_info(t2).cursed
-        && !fi1.cursed
-        && !fi2.cursed
-        && !fi1.name_cursed
-        && !fi2.name_cursed
-        && !i2.cursed
-        && !i3.cursed =>
-    block_indent(
-      [dom_of_term(Var(r)), text(" "), dom_of_term(e1, ~inline=true)],
-      Node.div([
-        block_indent([text("Z"), text("→")], dom_of_term(e2)),
-        block_indent(
-          [
-            text("S" ++ " "),
-            dom_of_name(x),
-            text("→"),
-            dom_of_name(y),
-            text("→"),
-          ],
-          dom_of_term(body),
-        ),
-      ]),
-    )
-  | Ap({
-      i: i1,
-      e1:
-        Ap({
-          i: _, //i2,
-          e1:
-            Ap({
-              i: _, //i3,
-              e1:
-                Ap({
-                  i: _, //i4,
-                  e1:
-                    Ap({
-                      i: _, //i5,
-                      e1:
-                        Ap({
-                          i: _, //i6,
-                          e1:
-                            Ap({
-                              i: _, //i7,
-                              e1:
-                                Ap({
-                                  i: _, //i8,
-                                  e1: Var(r),
-                                  e2: _,
-                                }),
-                              e2: _,
-                            }),
-                          e2: ea,
-                        }),
-                      e2: _,
-                    }),
-                  e2: Fun({i: _, x: _, t: _, e: body}),
-                }),
-              e2: ec,
-            }),
-          e2: ee1,
-        }),
-      e2: ee2,
-    })
-      when r.x == "eq-step" && !i1.cursor_inside =>
-    // && !get_info(t1).cursor_inside
-    // && !get_info(t2).cursor_inside
-    // && !get_info(t1).cursed
-    // && !get_info(t2).cursed
-    // && !fi1.cursed
-    // && !fi2.cursed
-    // && !fi1.name_cursed
-    // && !fi2.name_cursed
-    // && !i2.cursed
-    // && !i3.cursed
-    let fa = Lang.beta_sub(ea, body);
-    let rest =
-      switch (ee2) {
-      | Ap({i: _, e1: Ap({i: _, e1: Var(r), e2: _}), e2: _})
-          when r.x == "refl" =>
-        dom_of_term(ec)
-      | _ => dom_of_term(ee2)
-      };
-    Node.div([
-      oneline([
-        dom_of_term(fa, ~inline=true),
-        text("=⟨"),
-        dom_of_term(ee1, ~inline=true),
-        text("⟩"),
-      ]),
-      Node.br(),
-      rest,
-    ]);
-  | Ap(r) =>
-    let dom =
-      oneline([
-        dom_of_term(
-          ~inline=true,
-          ~parens_info={...default_parens_info, ap_assoc: true},
-          r.e1,
-        ),
-        text(" "),
-        dom_of_term(~inline=true, r.e2),
-      ]);
-    if (parens_info.ap_assoc || under_cursor) {
-      dom;
-    } else {
-      parens(dom);
-    };
-  | Let(r) =>
-    sub_block(
-      [
-        // check_let(c, en, t, completes, e1)
-        //   ? Node.text("🟩") :
-        Node.text(""),
+    | Fun(r) =>
+      let dom1 = [
         dom_of_name(r.x, ~cursed=r.i.name_cursed),
         text(":"),
-        dom_of_term(r.t),
-        text("←"),
-      ],
-      dom_of_term(r.e1),
-      dom_of_term(r.e2),
-    )
+        dom_of_term(~inline=true, r.t),
+        text("→"),
+      ];
+      let dom2 =
+        dom_of_term(
+          ~inline,
+          ~parens_info={...default_parens_info, fun_assoc: true},
+          r.e,
+        );
+      if (inline) {
+        let dom = oneline(dom1 @ [dom2]);
+        if (parens_info.fun_assoc || under_cursor || parens_info.no_parens) {
+          dom;
+        } else {
+          parens(dom);
+        };
+      } else {
+        block_indent(dom1, dom2);
+      };
+    | Ap({
+        i: i1,
+        e1: Ap({i: i2, e1: Var(r), e2: t1}),
+        e2: Fun({i: i3, x: Text(x), t: t2, e: body}),
+      })
+        when
+          r.x == "exists"
+          && terms_equal(t1, t2)
+          && !(
+               i1.cursed
+               || i2.cursed
+               || r.i.cursed
+               || i3.cursed
+               || i3.name_cursed
+               || get_info(t2).cursed
+               || get_info(t2).cursor_inside
+             ) =>
+      oneline([
+        text("("),
+        dom_of_term(Var(r)),
+        dom_of_name(Text(x), ~cursed=i3.name_cursed),
+        text(":"),
+        dom_of_term(t1),
+        text("."),
+        dom_of_term(~inline=true, body),
+        text(")"),
+      ])
+    | Ap({
+        i: _,
+        e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: t1}), e2: t2}),
+        e2: t3,
+      })
+        when
+          r.x == "eq"
+          && !(
+               //  i1.cursed ||
+               i2.cursed
+               || i3.cursed
+               || r.i.cursed
+               || get_info(t1).cursed
+               || get_info(t1).cursor_inside
+             ) =>
+      oneline([
+        text("("),
+        dom_of_term(t2),
+        dom_of_term(Var(r)),
+        // text("["),
+        // dom_of_term(c, en, completes, t1),
+        // text("]"),
+        dom_of_term(t3),
+        text(")"),
+      ])
+    // | Ap(Ap(Var("refl"), _), e) =>
+    //   oneline([
+    //     dom_of_term(c, en, completes, Var("refl")),
+    //     text("("),
+    //     dom_of_term(c, en, completes, e),
+    //     text(")"),
+    //   ])
+    | Ap({
+        i: _,
+        e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: e1}), e2}),
+        e2: Fun({i: fi1, x, t: t1, e: Fun({i: fi2, x: y, t: t2, e: body})}),
+      })
+        when
+          r.x == "nat-ind"
+          && !get_info(t1).cursor_inside
+          && !get_info(t2).cursor_inside
+          && !get_info(t1).cursed
+          && !get_info(t2).cursed
+          && !fi1.cursed
+          && !fi2.cursed
+          && !fi1.name_cursed
+          && !fi2.name_cursed
+          && !i2.cursed
+          && !i3.cursed =>
+      block_indent(
+        [dom_of_term(Var(r)), text(" "), dom_of_term(e1, ~inline=true)],
+        Node.div([
+          block_indent([text("Z"), text("→")], dom_of_term(e2)),
+          block_indent(
+            [
+              text("S" ++ " "),
+              dom_of_name(x),
+              text("→"),
+              dom_of_name(y),
+              text("→"),
+            ],
+            dom_of_term(body),
+          ),
+        ]),
+      )
+    | Ap({
+        i: i1,
+        e1:
+          Ap({
+            i: _, //i2,
+            e1:
+              Ap({
+                i: _, //i3,
+                e1:
+                  Ap({
+                    i: _, //i4,
+                    e1:
+                      Ap({
+                        i: _, //i5,
+                        e1:
+                          Ap({
+                            i: _, //i6,
+                            e1:
+                              Ap({
+                                i: _, //i7,
+                                e1:
+                                  Ap({
+                                    i: _, //i8,
+                                    e1: Var(r),
+                                    e2: _,
+                                  }),
+                                e2: _,
+                              }),
+                            e2: ea,
+                          }),
+                        e2: _,
+                      }),
+                    e2: Fun({i: _, x: _, t: _, e: body}),
+                  }),
+                e2: ec,
+              }),
+            e2: ee1,
+          }),
+        e2: ee2,
+      })
+        when
+          r.x == "eq-step"
+          && (
+            !i1.cursor_inside
+            || get_info(ea).cursor_inside
+            || get_info(ea).cursed
+            || get_info(ee1).cursor_inside
+            || get_info(ee1).cursed
+            // || get_info(body).cursor_inside
+            // || get_info(body).cursed
+            || get_info(ee2).cursor_inside
+            || get_info(ee2).cursed
+          ) =>
+      // && !get_info(t1).cursor_inside
+      // && !get_info(t2).cursor_inside
+      // && !get_info(t1).cursed
+      // && !get_info(t2).cursed
+      // && !fi1.cursed
+      // && !fi2.cursed
+      // && !fi1.name_cursed
+      // && !fi2.name_cursed
+      // && !i2.cursed
+      // && !i3.cursed
+      let highlighted_ea =
+        switch (body) {
+        | Var(_) => ea // for trivial congruence, don't highlight the rewritten subterm
+        | _ => set_info(ea, {...get_info(ea), highlighted: true})
+        };
+      let fa = Lang.beta_sub(highlighted_ea, body);
+      let rest =
+        switch (ee2) {
+        | Ap({i, e1: Ap({i: _, e1: Var(r), e2: _}), e2: _})
+            when r.x == "refl" && !(i.cursed || i.cursor_inside) =>
+          dom_of_term(ec)
+        | _ => dom_of_term(ee2)
+        };
+      Node.div([
+        oneline([
+          dom_of_term(fa, ~inline=true),
+          text("=⟨"),
+          dom_of_term(
+            ee1,
+            ~inline=true,
+            ~parens_info={...default_parens_info, no_parens: true},
+          ),
+          text("⟩"),
+        ]),
+        Node.br(),
+        rest,
+      ]);
+    | Ap(r) =>
+      let dom =
+        oneline([
+          dom_of_term(
+            ~inline=true,
+            ~parens_info={...default_parens_info, ap_assoc: true},
+            r.e1,
+          ),
+          text(" "),
+          dom_of_term(~inline=true, r.e2),
+        ]);
+      if (parens_info.ap_assoc || under_cursor || parens_info.no_parens) {
+        dom;
+      } else {
+        parens(dom);
+      };
+    | Let(r) =>
+      sub_block(
+        [
+          // check_let(c, en, t, completes, e1)
+          //   ? Node.text("🟩") :
+          Node.text(""),
+          dom_of_name(r.x, ~cursed=r.i.name_cursed),
+          text(":"),
+          dom_of_term(r.t),
+          text("←"),
+        ],
+        dom_of_term(r.e1),
+        dom_of_term(r.e2),
+      )
+    };
+  if (get_info(e).highlighted && !under_cursor) {
+    highlight([dom]);
+  } else {
+    dom;
   };
+};
 
 let doms_of_context = (ctx: context): list(Node.t) => {
   let dom_of_entry = (r): Node.t => {

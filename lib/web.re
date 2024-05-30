@@ -21,6 +21,10 @@ let mark = (a: list(Node.t)): Node.t => {
   Node.div(~attr=Attr.create("class", "mark-div"), a);
 };
 
+let highlight = (a: list(Node.t)): Node.t => {
+  Node.div(~attr=Attr.create("class", "highlight"), a);
+};
+
 let oneline = (a: list(Node.t)): Node.t => {
   Node.div(~attr=Attr.create("class", "oneline"), a);
 };

@@ -37,6 +37,7 @@ type info = {
   cursed: bool,
   name_cursed: bool,
   cursor_inside: bool,
+  highlighted: bool,
 }
 
 and mark =
@@ -98,4 +99,5 @@ let default_info: info = {
   cursed: false,
   name_cursed: false,
   cursor_inside: false,
+  highlighted: false,
 };
