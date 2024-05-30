@@ -225,6 +225,75 @@ let rec dom_of_term =
         ),
       ]),
     )
+  | Ap({
+      i: i1,
+      e1:
+        Ap({
+          i: _, //i2,
+          e1:
+            Ap({
+              i: _, //i3,
+              e1:
+                Ap({
+                  i: _, //i4,
+                  e1:
+                    Ap({
+                      i: _, //i5,
+                      e1:
+                        Ap({
+                          i: _, //i6,
+                          e1:
+                            Ap({
+                              i: _, //i7,
+                              e1:
+                                Ap({
+                                  i: _, //i8,
+                                  e1: Var(r),
+                                  e2: _,
+                                }),
+                              e2: _,
+                            }),
+                          e2: ea,
+                        }),
+                      e2: _,
+                    }),
+                  e2: Fun({i: _, x: _, t: _, e: body}),
+                }),
+              e2: ec,
+            }),
+          e2: ee1,
+        }),
+      e2: ee2,
+    })
+      when r.x == "eq-step" && !i1.cursor_inside =>
+    // && !get_info(t1).cursor_inside
+    // && !get_info(t2).cursor_inside
+    // && !get_info(t1).cursed
+    // && !get_info(t2).cursed
+    // && !fi1.cursed
+    // && !fi2.cursed
+    // && !fi1.name_cursed
+    // && !fi2.name_cursed
+    // && !i2.cursed
+    // && !i3.cursed
+    let fa = Lang.beta_sub(ea, body);
+    let rest =
+      switch (ee2) {
+      | Ap({i: _, e1: Ap({i: _, e1: Var(r), e2: _}), e2: _})
+          when r.x == "refl" =>
+        dom_of_term(ec)
+      | _ => dom_of_term(ee2)
+      };
+    Node.div([
+      oneline([
+        dom_of_term(fa, ~inline=true),
+        text("=⟨"),
+        dom_of_term(ee1, ~inline=true),
+        text("⟩"),
+      ]),
+      Node.br(),
+      rest,
+    ]);
   | Ap(r) =>
     let dom =
       oneline([
