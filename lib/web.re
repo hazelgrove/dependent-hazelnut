@@ -10,7 +10,7 @@ let cursor_hole: Node.t = {
 };
 
 let text = (x: string): Node.t => {
-  Node.div([Node.text(x)]);
+  Node.div(~attr=Attr.create("class", "oneline"), [Node.text(x)]);
 };
 
 let cursor = (a: list(Node.t)): Node.t => {

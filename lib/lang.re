@@ -312,7 +312,8 @@ let rec head_reduce = (ctx: context, offset: int, e: term): term => {
   | Ap(r) =>
     switch (head_reduce(ctx, offset, r.e1)) {
     | Fun(r2) => head_reduce(ctx, offset, beta_sub(r.e2, r2.e)) // if it's an application of a function abstraction, substitute and continue
-    | Hole(r2) => Hole(r2) // if it's an application of a hole, reduce to a hole
+    | Hole(_)
+    | Mark(_) => default_hole // if it's an application of a hole or mark, reduce to a hole
     | _ => Ap(r)
     }
   };

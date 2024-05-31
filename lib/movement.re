@@ -37,6 +37,10 @@ let rec move_zterm = (d, z): zterm =>
   | (Left, EFun(x, t, z)) =>
     let z' = move_zterm(Left, z);
     z != z' ? EFun(x, t, z') : TFun(x, Cursor(t), pterm_of_zterm(z));
+  | (Left, RAp(Ap(e1, e2), z)) =>
+    let z' = move_zterm(Left, z);
+    z != z'
+      ? RAp(Ap(e1, e2), z') : LAp(RAp(e1, Cursor(e2)), pterm_of_zterm(z));
   | (Left, RAp(e1, z)) =>
     let z' = move_zterm(Left, z);
     z != z' ? RAp(e1, z') : LAp(Cursor(e1), pterm_of_zterm(z));

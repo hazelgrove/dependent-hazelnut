@@ -1705,6 +1705,5 @@ let int_library: zterm =
     ),
   );
 
-let library = int_library;
-let context_library =
-  compose_libraries([exists_library, eq_library, nat_library]);
+let library = compose_libraries([eq_library, nat_library]);
+let context_library = compose_libraries([exists_library]);
