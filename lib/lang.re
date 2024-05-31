@@ -156,6 +156,19 @@ let rec place_cursor = (z: zterm, e: term): term => {
   };
 };
 
+// no marks or holes
+let rec complete = (e: term): bool =>
+  switch (e) {
+  | Typ(_)
+  | Var(_) => true
+  | Hole(_)
+  | Mark(_) => false
+  | Ap(r) => complete(r.e1) && complete(r.e2)
+  | Arrow(r) => complete(r.t1) && complete(r.t2)
+  | Fun(r) => complete(r.t) && complete(r.e)
+  | Let(r) => complete(r.t) && complete(r.e1) && complete(r.e2)
+  };
+
 let valid_name = x => String.trim(x) != "";
 
 let extend_list_name = (x: name, c: list(string)): list(string) =>

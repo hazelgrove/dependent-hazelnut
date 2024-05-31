@@ -52,6 +52,9 @@ let rec dom_of_term =
           e: term,
         )
         : Node.t => {
+  let hideable = e => {
+    !(get_info(e).cursed || get_info(e).cursor_inside) && complete(e);
+  };
   let dom =
     switch (e) {
     | Hole(r) when r.i.cursed => cursor_hole
@@ -157,9 +160,8 @@ let rec dom_of_term =
                || r.i.cursed
                || i3.cursed
                || i3.name_cursed
-               || get_info(t2).cursed
-               || get_info(t2).cursor_inside
-             ) =>
+             )
+          && hideable(t2) =>
       oneline([
         text("("),
         dom_of_term(Var(r)),
@@ -179,12 +181,9 @@ let rec dom_of_term =
           r.x == "eq"
           && !(
                //  i1.cursed ||
-               i2.cursed
-               || i3.cursed
-               || r.i.cursed
-               || get_info(t1).cursed
-               || get_info(t1).cursor_inside
-             ) =>
+               i2.cursed || i3.cursed || r.i.cursed
+             )
+          && hideable(t1) =>
       oneline([
         text("("),
         dom_of_term(t2),
@@ -209,10 +208,8 @@ let rec dom_of_term =
       })
         when
           r.x == "nat-ind"
-          && !get_info(t1).cursor_inside
-          && !get_info(t2).cursor_inside
-          && !get_info(t1).cursed
-          && !get_info(t2).cursed
+          && hideable(t1)
+          && hideable(t2)
           && !fi1.cursed
           && !fi2.cursed
           && !fi1.name_cursed
@@ -259,15 +256,15 @@ let rec dom_of_term =
                                   Ap({
                                     i: _, //i8,
                                     e1: Var(r),
-                                    e2: _,
+                                    e2: hide1,
                                   }),
-                                e2: _,
+                                e2: hide2,
                               }),
                             e2: ea,
                           }),
-                        e2: _,
+                        e2: hide3,
                       }),
-                    e2: Fun({i: _, x: _, t: _, e: body}),
+                    e2: Fun({i: _, x: _, t: _, e: body}) as hide4,
                   }),
                 e2: ec,
               }),
@@ -287,7 +284,11 @@ let rec dom_of_term =
             // || get_info(body).cursed
             || get_info(ee2).cursor_inside
             || get_info(ee2).cursed
-          ) =>
+          )
+          && hideable(hide1)
+          && hideable(hide2)
+          && hideable(hide3)
+          && hideable(hide4) =>
       // && !get_info(t1).cursor_inside
       // && !get_info(t2).cursor_inside
       // && !get_info(t1).cursed
@@ -306,8 +307,8 @@ let rec dom_of_term =
       let fa = Lang.beta_sub(highlighted_ea, body);
       let rest =
         switch (ee2) {
-        | Ap({i, e1: Ap({i: _, e1: Var(r), e2: _}), e2: _})
-            when r.x == "refl" && !(i.cursed || i.cursor_inside) =>
+        | Ap({i: _, e1: Ap({i: _, e1: Var(r), e2: _}), e2: _})
+            when r.x == "refl" && hideable(ee2) =>
           dom_of_term(ec)
         | _ => dom_of_term(ee2)
         };

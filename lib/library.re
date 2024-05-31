@@ -1007,10 +1007,13 @@ let nat_library: zterm =
                     Ap(
                       Ap(
                         Ap(
-                          Ap(Var("nat-ind"), Fun(Hole, Hole, Var("nat"))),
+                          Ap(
+                            Var("nat-ind"),
+                            Fun(Hole, Var("nat"), Var("nat")),
+                          ),
                           Var("m"),
                         ),
-                        Fun(Hole, Hole, Var("S")),
+                        Fun(Hole, Var("nat"), Var("S")),
                       ),
                       Var("n"),
                     ),
@@ -1049,11 +1052,11 @@ let nat_library: zterm =
                         Ap(
                           Ap(
                             Var("nat-ind-eq-Z"),
-                            Fun(Hole, Hole, Var("nat")),
+                            Fun(Hole, Var("nat"), Var("nat")),
                           ),
                           Var("Z"),
                         ),
-                        Fun(Hole, Hole, Var("S")),
+                        Fun(Hole, Var("nat"), Var("S")),
                       ),
                     ),
                     Fun(
@@ -1110,11 +1113,11 @@ let nat_library: zterm =
                                 Ap(
                                   Ap(
                                     Var("nat-ind-eq-S"),
-                                    Fun(Hole, Hole, Var("nat")),
+                                    Fun(Hole, Var("nat"), Var("nat")),
                                   ),
                                   Var("Z"),
                                 ),
-                                Fun(Hole, Hole, Var("S")),
+                                Fun(Hole, Var("nat"), Var("S")),
                               ),
                               Var("x"),
                             ),
