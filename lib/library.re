@@ -885,20 +885,24 @@ let nat_library: zterm =
             Text("P"),
             Arrow(Hole, Var("nat"), Typ),
             Arrow(
-              Hole,
-              Ap(Var("P"), Var("Z")),
+              Text("n"),
+              Var("nat"),
               Arrow(
                 Hole,
+                Ap(Var("P"), Var("Z")),
                 Arrow(
-                  Text("x"),
-                  Var("nat"),
+                  Hole,
                   Arrow(
-                    Hole,
-                    Ap(Var("P"), Var("x")),
-                    Ap(Var("P"), Ap(Var("S"), Var("x"))),
+                    Text("x"),
+                    Var("nat"),
+                    Arrow(
+                      Hole,
+                      Ap(Var("P"), Var("x")),
+                      Ap(Var("P"), Ap(Var("S"), Var("x"))),
+                    ),
                   ),
+                  Ap(Var("P"), Var("n")),
                 ),
-                Arrow(Text("n"), Var("nat"), Ap(Var("P"), Var("n"))),
               ),
             ),
           ),
@@ -927,10 +931,10 @@ let nat_library: zterm =
                       Ap(Var("eq"), Ap(Var("P"), Var("Z"))),
                       Ap(
                         Ap(
-                          Ap(Ap(Var("nat-ind"), Var("P")), Var("pZ")),
-                          Var("pS"),
+                          Ap(Ap(Var("nat-ind"), Var("P")), Var("Z")),
+                          Var("pZ"),
                         ),
-                        Var("Z"),
+                        Var("pS"),
                       ),
                     ),
                     Var("pZ"),
@@ -969,20 +973,23 @@ let nat_library: zterm =
                           ),
                           Ap(
                             Ap(
-                              Ap(Ap(Var("nat-ind"), Var("P")), Var("pZ")),
-                              Var("pS"),
+                              Ap(
+                                Ap(Var("nat-ind"), Var("P")),
+                                Ap(Var("S"), Var("x")),
+                              ),
+                              Var("pZ"),
                             ),
-                            Ap(Var("S"), Var("x")),
+                            Var("pS"),
                           ),
                         ),
                         Ap(
                           Ap(Var("pS"), Var("x")),
                           Ap(
                             Ap(
-                              Ap(Ap(Var("nat-ind"), Var("P")), Var("pZ")),
-                              Var("pS"),
+                              Ap(Ap(Var("nat-ind"), Var("P")), Var("x")),
+                              Var("pZ"),
                             ),
-                            Var("x"),
+                            Var("pS"),
                           ),
                         ),
                       ),
@@ -1011,11 +1018,19 @@ let nat_library: zterm =
                             Var("nat-ind"),
                             Fun(Hole, Var("nat"), Var("nat")),
                           ),
-                          Var("m"),
+                          Var("n"),
                         ),
-                        Fun(Hole, Var("nat"), Var("S")),
+                        Var("m"),
                       ),
-                      Var("n"),
+                      Fun(
+                        Hole,
+                        Var("nat"),
+                        Fun(
+                          Text("f1"),
+                          Var("nat"),
+                          Ap(Var("S"), Var("f1")),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1043,7 +1058,15 @@ let nat_library: zterm =
                         ),
                         Var("n"),
                       ),
-                      Fun(Hole, Var("nat"), Var("S")),
+                      Fun(
+                        Hole,
+                        Var("nat"),
+                        Fun(
+                          Text("f1"),
+                          Var("nat"),
+                          Ap(Var("S"), Var("f1")),
+                        ),
+                      ),
                     ),
                   ),
                   E2Let(
@@ -1084,7 +1107,15 @@ let nat_library: zterm =
                               ),
                               Var("m"),
                             ),
-                            Fun(Hole, Var("nat"), Var("S")),
+                            Fun(
+                              Hole,
+                              Var("nat"),
+                              Fun(
+                                Text("f1"),
+                                Var("nat"),
+                                Ap(Var("S"), Var("f1")),
+                              ),
+                            ),
                           ),
                           Var("n"),
                         ),
@@ -1126,29 +1157,66 @@ let nat_library: zterm =
                                   ),
                                 ),
                               ),
-                              Ap(Var("Z-plus"), Var("Z")),
+                              Var("n"),
                             ),
+                            Ap(Var("Z-plus"), Var("Z")),
+                          ),
+                          Fun(
+                            Text("x"),
+                            Var("nat"),
                             Fun(
-                              Text("x"),
-                              Var("nat"),
-                              Fun(
-                                Text("f1"),
+                              Text("f1"),
+                              Ap(
+                                Fun(
+                                  Text("n"),
+                                  Var("nat"),
+                                  Ap(
+                                    Ap(
+                                      Ap(Var("eq"), Var("nat")),
+                                      Ap(
+                                        Ap(Var("plus"), Var("n")),
+                                        Var("Z"),
+                                      ),
+                                    ),
+                                    Var("n"),
+                                  ),
+                                ),
+                                Var("x"),
+                              ),
+                              Ap(
                                 Ap(
-                                  Fun(
-                                    Text("n"),
-                                    Var("nat"),
+                                  Ap(
                                     Ap(
                                       Ap(
-                                        Ap(Var("eq"), Var("nat")),
                                         Ap(
-                                          Ap(Var("plus"), Var("n")),
-                                          Var("Z"),
+                                          Ap(
+                                            Ap(Var("eq-step"), Var("nat")),
+                                            Var("nat"),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Var("plus"),
+                                              Ap(Var("S"), Var("x")),
+                                            ),
+                                            Var("Z"),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Var("S"),
+                                          Ap(
+                                            Ap(Var("plus"), Var("x")),
+                                            Var("Z"),
+                                          ),
                                         ),
                                       ),
-                                      Var("n"),
+                                      Fun(Text("x"), Var("nat"), Var("x")),
                                     ),
+                                    Ap(Var("S"), Var("x")),
                                   ),
-                                  Var("x"),
+                                  Ap(
+                                    Ap(Var("S-plus"), Var("x")),
+                                    Var("Z"),
+                                  ),
                                 ),
                                 Ap(
                                   Ap(
@@ -1164,74 +1232,30 @@ let nat_library: zterm =
                                               Var("nat"),
                                             ),
                                             Ap(
-                                              Ap(
-                                                Var("plus"),
-                                                Ap(Var("S"), Var("x")),
-                                              ),
-                                              Var("Z"),
-                                            ),
-                                          ),
-                                          Ap(
-                                            Var("S"),
-                                            Ap(
                                               Ap(Var("plus"), Var("x")),
                                               Var("Z"),
                                             ),
                                           ),
+                                          Var("x"),
                                         ),
                                         Fun(
                                           Text("x"),
                                           Var("nat"),
-                                          Var("x"),
+                                          Ap(Var("S"), Var("x")),
                                         ),
                                       ),
                                       Ap(Var("S"), Var("x")),
                                     ),
-                                    Ap(
-                                      Ap(Var("S-plus"), Var("x")),
-                                      Var("Z"),
-                                    ),
+                                    Var("f1"),
                                   ),
                                   Ap(
-                                    Ap(
-                                      Ap(
-                                        Ap(
-                                          Ap(
-                                            Ap(
-                                              Ap(
-                                                Ap(
-                                                  Var("eq-step"),
-                                                  Var("nat"),
-                                                ),
-                                                Var("nat"),
-                                              ),
-                                              Ap(
-                                                Ap(Var("plus"), Var("x")),
-                                                Var("Z"),
-                                              ),
-                                            ),
-                                            Var("x"),
-                                          ),
-                                          Fun(
-                                            Text("x"),
-                                            Var("nat"),
-                                            Ap(Var("S"), Var("x")),
-                                          ),
-                                        ),
-                                        Ap(Var("S"), Var("x")),
-                                      ),
-                                      Var("f1"),
-                                    ),
-                                    Ap(
-                                      Ap(Var("refl"), Var("nat")),
-                                      Ap(Var("S"), Var("x")),
-                                    ),
+                                    Ap(Var("refl"), Var("nat")),
+                                    Ap(Var("S"), Var("x")),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          Var("n"),
                         ),
                       ),
                       E2Let(
@@ -1289,6 +1313,136 @@ let nat_library: zterm =
                                       ),
                                     ),
                                   ),
+                                  Var("n"),
+                                ),
+                                Ap(
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Var("eq-step"),
+                                                Var("nat"),
+                                              ),
+                                              Var("nat"),
+                                            ),
+                                            Ap(
+                                              Ap(Var("plus"), Var("Z")),
+                                              Ap(Var("S"), Var("m")),
+                                            ),
+                                          ),
+                                          Ap(Var("S"), Var("m")),
+                                        ),
+                                        Fun(
+                                          Text("x"),
+                                          Var("nat"),
+                                          Var("x"),
+                                        ),
+                                      ),
+                                      Ap(
+                                        Var("S"),
+                                        Ap(
+                                          Ap(Var("plus"), Var("Z")),
+                                          Var("m"),
+                                        ),
+                                      ),
+                                    ),
+                                    Ap(
+                                      Var("Z-plus"),
+                                      Ap(Var("S"), Var("m")),
+                                    ),
+                                  ),
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Var("eq-step"),
+                                                  Var("nat"),
+                                                ),
+                                                Var("nat"),
+                                              ),
+                                              Var("m"),
+                                            ),
+                                            Ap(
+                                              Ap(Var("plus"), Var("Z")),
+                                              Var("m"),
+                                            ),
+                                          ),
+                                          Fun(
+                                            Text("x"),
+                                            Var("nat"),
+                                            Ap(Var("S"), Var("x")),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Var("S"),
+                                          Ap(
+                                            Ap(Var("plus"), Var("Z")),
+                                            Var("m"),
+                                          ),
+                                        ),
+                                      ),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("sym"), Var("nat")),
+                                            Ap(
+                                              Ap(Var("plus"), Var("Z")),
+                                              Var("m"),
+                                            ),
+                                          ),
+                                          Var("m"),
+                                        ),
+                                        Ap(Var("Z-plus"), Var("m")),
+                                      ),
+                                    ),
+                                    Ap(
+                                      Ap(Var("refl"), Var("nat")),
+                                      Ap(
+                                        Var("S"),
+                                        Ap(
+                                          Ap(Var("plus"), Var("Z")),
+                                          Var("m"),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Fun(
+                                Text("x"),
+                                Var("nat"),
+                                Fun(
+                                  Text("f1"),
+                                  Ap(
+                                    Fun(
+                                      Text("n"),
+                                      Var("nat"),
+                                      Ap(
+                                        Ap(
+                                          Ap(Var("eq"), Var("nat")),
+                                          Ap(
+                                            Ap(Var("plus"), Var("n")),
+                                            Ap(Var("S"), Var("m")),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Var("S"),
+                                          Ap(
+                                            Ap(Var("plus"), Var("n")),
+                                            Var("m"),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Var("x"),
+                                  ),
                                   Ap(
                                     Ap(
                                       Ap(
@@ -1303,11 +1457,20 @@ let nat_library: zterm =
                                                 Var("nat"),
                                               ),
                                               Ap(
-                                                Ap(Var("plus"), Var("Z")),
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(Var("S"), Var("x")),
+                                                ),
                                                 Ap(Var("S"), Var("m")),
                                               ),
                                             ),
-                                            Ap(Var("S"), Var("m")),
+                                            Ap(
+                                              Var("S"),
+                                              Ap(
+                                                Ap(Var("plus"), Var("x")),
+                                                Ap(Var("S"), Var("m")),
+                                              ),
+                                            ),
                                           ),
                                           Fun(
                                             Text("x"),
@@ -1318,13 +1481,16 @@ let nat_library: zterm =
                                         Ap(
                                           Var("S"),
                                           Ap(
-                                            Ap(Var("plus"), Var("Z")),
+                                            Ap(
+                                              Var("plus"),
+                                              Ap(Var("S"), Var("x")),
+                                            ),
                                             Var("m"),
                                           ),
                                         ),
                                       ),
                                       Ap(
-                                        Var("Z-plus"),
+                                        Ap(Var("S-plus"), Var("x")),
                                         Ap(Var("S"), Var("m")),
                                       ),
                                     ),
@@ -1341,100 +1507,8 @@ let nat_library: zterm =
                                                   ),
                                                   Var("nat"),
                                                 ),
-                                                Var("m"),
-                                              ),
-                                              Ap(
-                                                Ap(Var("plus"), Var("Z")),
-                                                Var("m"),
-                                              ),
-                                            ),
-                                            Fun(
-                                              Text("x"),
-                                              Var("nat"),
-                                              Ap(Var("S"), Var("x")),
-                                            ),
-                                          ),
-                                          Ap(
-                                            Var("S"),
-                                            Ap(
-                                              Ap(Var("plus"), Var("Z")),
-                                              Var("m"),
-                                            ),
-                                          ),
-                                        ),
-                                        Ap(
-                                          Ap(
-                                            Ap(
-                                              Ap(Var("sym"), Var("nat")),
-                                              Ap(
-                                                Ap(Var("plus"), Var("Z")),
-                                                Var("m"),
-                                              ),
-                                            ),
-                                            Var("m"),
-                                          ),
-                                          Ap(Var("Z-plus"), Var("m")),
-                                        ),
-                                      ),
-                                      Ap(
-                                        Ap(Var("refl"), Var("nat")),
-                                        Ap(
-                                          Var("S"),
-                                          Ap(
-                                            Ap(Var("plus"), Var("Z")),
-                                            Var("m"),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Fun(
-                                  Text("x"),
-                                  Var("nat"),
-                                  Fun(
-                                    Text("f1"),
-                                    Ap(
-                                      Fun(
-                                        Text("n"),
-                                        Var("nat"),
-                                        Ap(
-                                          Ap(
-                                            Ap(Var("eq"), Var("nat")),
-                                            Ap(
-                                              Ap(Var("plus"), Var("n")),
-                                              Ap(Var("S"), Var("m")),
-                                            ),
-                                          ),
-                                          Ap(
-                                            Var("S"),
-                                            Ap(
-                                              Ap(Var("plus"), Var("n")),
-                                              Var("m"),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Var("x"),
-                                    ),
-                                    Ap(
-                                      Ap(
-                                        Ap(
-                                          Ap(
-                                            Ap(
-                                              Ap(
                                                 Ap(
-                                                  Ap(
-                                                    Var("eq-step"),
-                                                    Var("nat"),
-                                                  ),
-                                                  Var("nat"),
-                                                ),
-                                                Ap(
-                                                  Ap(
-                                                    Var("plus"),
-                                                    Ap(Var("S"), Var("x")),
-                                                  ),
+                                                  Ap(Var("plus"), Var("x")),
                                                   Ap(Var("S"), Var("m")),
                                                 ),
                                               ),
@@ -1442,14 +1516,14 @@ let nat_library: zterm =
                                                 Var("S"),
                                                 Ap(
                                                   Ap(Var("plus"), Var("x")),
-                                                  Ap(Var("S"), Var("m")),
+                                                  Var("m"),
                                                 ),
                                               ),
                                             ),
                                             Fun(
                                               Text("x"),
                                               Var("nat"),
-                                              Var("x"),
+                                              Ap(Var("S"), Var("x")),
                                             ),
                                           ),
                                           Ap(
@@ -1463,10 +1537,7 @@ let nat_library: zterm =
                                             ),
                                           ),
                                         ),
-                                        Ap(
-                                          Ap(Var("S-plus"), Var("x")),
-                                          Ap(Var("S"), Var("m")),
-                                        ),
+                                        Var("f1"),
                                       ),
                                       Ap(
                                         Ap(
@@ -1482,22 +1553,22 @@ let nat_library: zterm =
                                                     Var("nat"),
                                                   ),
                                                   Ap(
+                                                    Var("S"),
                                                     Ap(
-                                                      Var("plus"),
-                                                      Var("x"),
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("x"),
+                                                      ),
+                                                      Var("m"),
                                                     ),
-                                                    Ap(Var("S"), Var("m")),
                                                   ),
                                                 ),
                                                 Ap(
-                                                  Var("S"),
                                                   Ap(
-                                                    Ap(
-                                                      Var("plus"),
-                                                      Var("x"),
-                                                    ),
-                                                    Var("m"),
+                                                    Var("plus"),
+                                                    Ap(Var("S"), Var("x")),
                                                   ),
+                                                  Var("m"),
                                                 ),
                                               ),
                                               Fun(
@@ -1517,51 +1588,10 @@ let nat_library: zterm =
                                               ),
                                             ),
                                           ),
-                                          Var("f1"),
-                                        ),
-                                        Ap(
                                           Ap(
                                             Ap(
                                               Ap(
-                                                Ap(
-                                                  Ap(
-                                                    Ap(
-                                                      Ap(
-                                                        Var("eq-step"),
-                                                        Var("nat"),
-                                                      ),
-                                                      Var("nat"),
-                                                    ),
-                                                    Ap(
-                                                      Var("S"),
-                                                      Ap(
-                                                        Ap(
-                                                          Var("plus"),
-                                                          Var("x"),
-                                                        ),
-                                                        Var("m"),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Ap(
-                                                    Ap(
-                                                      Var("plus"),
-                                                      Ap(
-                                                        Var("S"),
-                                                        Var("x"),
-                                                      ),
-                                                    ),
-                                                    Var("m"),
-                                                  ),
-                                                ),
-                                                Fun(
-                                                  Text("x"),
-                                                  Var("nat"),
-                                                  Ap(Var("S"), Var("x")),
-                                                ),
-                                              ),
-                                              Ap(
-                                                Var("S"),
+                                                Ap(Var("sym"), Var("nat")),
                                                 Ap(
                                                   Ap(
                                                     Var("plus"),
@@ -1570,53 +1600,30 @@ let nat_library: zterm =
                                                   Var("m"),
                                                 ),
                                               ),
+                                              Ap(
+                                                Var("S"),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("x")),
+                                                  Var("m"),
+                                                ),
+                                              ),
                                             ),
                                             Ap(
-                                              Ap(
-                                                Ap(
-                                                  Ap(
-                                                    Var("sym"),
-                                                    Var("nat"),
-                                                  ),
-                                                  Ap(
-                                                    Ap(
-                                                      Var("plus"),
-                                                      Ap(
-                                                        Var("S"),
-                                                        Var("x"),
-                                                      ),
-                                                    ),
-                                                    Var("m"),
-                                                  ),
-                                                ),
-                                                Ap(
-                                                  Var("S"),
-                                                  Ap(
-                                                    Ap(
-                                                      Var("plus"),
-                                                      Var("x"),
-                                                    ),
-                                                    Var("m"),
-                                                  ),
-                                                ),
-                                              ),
-                                              Ap(
-                                                Ap(Var("S-plus"), Var("x")),
-                                                Var("m"),
-                                              ),
+                                              Ap(Var("S-plus"), Var("x")),
+                                              Var("m"),
                                             ),
                                           ),
+                                        ),
+                                        Ap(
+                                          Ap(Var("refl"), Var("nat")),
                                           Ap(
-                                            Ap(Var("refl"), Var("nat")),
+                                            Var("S"),
                                             Ap(
-                                              Var("S"),
                                               Ap(
-                                                Ap(
-                                                  Var("plus"),
-                                                  Ap(Var("S"), Var("x")),
-                                                ),
-                                                Var("m"),
+                                                Var("plus"),
+                                                Ap(Var("S"), Var("x")),
                                               ),
+                                              Var("m"),
                                             ),
                                           ),
                                         ),
@@ -1625,7 +1632,6 @@ let nat_library: zterm =
                                   ),
                                 ),
                               ),
-                              Var("n"),
                             ),
                           ),
                         ),
@@ -1675,6 +1681,121 @@ let nat_library: zterm =
                                         ),
                                       ),
                                     ),
+                                    Var("n"),
+                                  ),
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Var("eq-step"),
+                                                  Var("nat"),
+                                                ),
+                                                Var("nat"),
+                                              ),
+                                              Ap(
+                                                Ap(Var("plus"), Var("Z")),
+                                                Var("m"),
+                                              ),
+                                            ),
+                                            Var("m"),
+                                          ),
+                                          Fun(
+                                            Text("x"),
+                                            Var("nat"),
+                                            Var("x"),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(Var("plus"), Var("m")),
+                                          Var("Z"),
+                                        ),
+                                      ),
+                                      Ap(Var("Z-plus"), Var("m")),
+                                    ),
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("eq-step"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Var("nat"),
+                                                ),
+                                                Var("m"),
+                                              ),
+                                              Ap(
+                                                Ap(Var("plus"), Var("m")),
+                                                Var("Z"),
+                                              ),
+                                            ),
+                                            Fun(
+                                              Text("x"),
+                                              Var("nat"),
+                                              Var("x"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(Var("plus"), Var("m")),
+                                            Var("Z"),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(Var("sym"), Var("nat")),
+                                              Ap(
+                                                Ap(Var("plus"), Var("m")),
+                                                Var("Z"),
+                                              ),
+                                            ),
+                                            Var("m"),
+                                          ),
+                                          Ap(Var("plus-Z"), Var("m")),
+                                        ),
+                                      ),
+                                      Ap(
+                                        Ap(Var("refl"), Var("nat")),
+                                        Ap(
+                                          Ap(Var("plus"), Var("m")),
+                                          Var("Z"),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Fun(
+                                  Text("x"),
+                                  Var("nat"),
+                                  Fun(
+                                    Text("f1"),
+                                    Ap(
+                                      Fun(
+                                        Text("n"),
+                                        Var("nat"),
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("eq"), Var("nat")),
+                                            Ap(
+                                              Ap(Var("plus"), Var("n")),
+                                              Var("m"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(Var("plus"), Var("m")),
+                                            Var("n"),
+                                          ),
+                                        ),
+                                      ),
+                                      Var("x"),
+                                    ),
                                     Ap(
                                       Ap(
                                         Ap(
@@ -1689,11 +1810,20 @@ let nat_library: zterm =
                                                   Var("nat"),
                                                 ),
                                                 Ap(
-                                                  Ap(Var("plus"), Var("Z")),
+                                                  Ap(
+                                                    Var("plus"),
+                                                    Ap(Var("S"), Var("x")),
+                                                  ),
                                                   Var("m"),
                                                 ),
                                               ),
-                                              Var("m"),
+                                              Ap(
+                                                Var("S"),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("x")),
+                                                  Var("m"),
+                                                ),
+                                              ),
                                             ),
                                             Fun(
                                               Text("x"),
@@ -1703,10 +1833,13 @@ let nat_library: zterm =
                                           ),
                                           Ap(
                                             Ap(Var("plus"), Var("m")),
-                                            Var("Z"),
+                                            Ap(Var("S"), Var("x")),
                                           ),
                                         ),
-                                        Ap(Var("Z-plus"), Var("m")),
+                                        Ap(
+                                          Ap(Var("S-plus"), Var("x")),
+                                          Var("m"),
+                                        ),
                                       ),
                                       Ap(
                                         Ap(
@@ -1721,99 +1854,6 @@ let nat_library: zterm =
                                                     ),
                                                     Var("nat"),
                                                   ),
-                                                  Var("m"),
-                                                ),
-                                                Ap(
-                                                  Ap(Var("plus"), Var("m")),
-                                                  Var("Z"),
-                                                ),
-                                              ),
-                                              Fun(
-                                                Text("x"),
-                                                Var("nat"),
-                                                Var("x"),
-                                              ),
-                                            ),
-                                            Ap(
-                                              Ap(Var("plus"), Var("m")),
-                                              Var("Z"),
-                                            ),
-                                          ),
-                                          Ap(
-                                            Ap(
-                                              Ap(
-                                                Ap(Var("sym"), Var("nat")),
-                                                Ap(
-                                                  Ap(Var("plus"), Var("m")),
-                                                  Var("Z"),
-                                                ),
-                                              ),
-                                              Var("m"),
-                                            ),
-                                            Ap(Var("plus-Z"), Var("m")),
-                                          ),
-                                        ),
-                                        Ap(
-                                          Ap(Var("refl"), Var("nat")),
-                                          Ap(
-                                            Ap(Var("plus"), Var("m")),
-                                            Var("Z"),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Fun(
-                                    Text("x"),
-                                    Var("nat"),
-                                    Fun(
-                                      Text("f1"),
-                                      Ap(
-                                        Fun(
-                                          Text("n"),
-                                          Var("nat"),
-                                          Ap(
-                                            Ap(
-                                              Ap(Var("eq"), Var("nat")),
-                                              Ap(
-                                                Ap(Var("plus"), Var("n")),
-                                                Var("m"),
-                                              ),
-                                            ),
-                                            Ap(
-                                              Ap(Var("plus"), Var("m")),
-                                              Var("n"),
-                                            ),
-                                          ),
-                                        ),
-                                        Var("x"),
-                                      ),
-                                      Ap(
-                                        Ap(
-                                          Ap(
-                                            Ap(
-                                              Ap(
-                                                Ap(
-                                                  Ap(
-                                                    Ap(
-                                                      Var("eq-step"),
-                                                      Var("nat"),
-                                                    ),
-                                                    Var("nat"),
-                                                  ),
-                                                  Ap(
-                                                    Ap(
-                                                      Var("plus"),
-                                                      Ap(
-                                                        Var("S"),
-                                                        Var("x"),
-                                                      ),
-                                                    ),
-                                                    Var("m"),
-                                                  ),
-                                                ),
-                                                Ap(
-                                                  Var("S"),
                                                   Ap(
                                                     Ap(
                                                       Var("plus"),
@@ -1822,11 +1862,15 @@ let nat_library: zterm =
                                                     Var("m"),
                                                   ),
                                                 ),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("m")),
+                                                  Var("x"),
+                                                ),
                                               ),
                                               Fun(
                                                 Text("x"),
                                                 Var("nat"),
-                                                Var("x"),
+                                                Ap(Var("S"), Var("x")),
                                               ),
                                             ),
                                             Ap(
@@ -1834,10 +1878,7 @@ let nat_library: zterm =
                                               Ap(Var("S"), Var("x")),
                                             ),
                                           ),
-                                          Ap(
-                                            Ap(Var("S-plus"), Var("x")),
-                                            Var("m"),
-                                          ),
+                                          Var("f1"),
                                         ),
                                         Ap(
                                           Ap(
@@ -1853,13 +1894,52 @@ let nat_library: zterm =
                                                       Var("nat"),
                                                     ),
                                                     Ap(
+                                                      Var("S"),
                                                       Ap(
-                                                        Var("plus"),
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Var("m"),
+                                                        ),
                                                         Var("x"),
                                                       ),
-                                                      Var("m"),
                                                     ),
                                                   ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("m"),
+                                                    ),
+                                                    Ap(Var("S"), Var("x")),
+                                                  ),
+                                                ),
+                                                Fun(
+                                                  Text("x"),
+                                                  Var("nat"),
+                                                  Var("x"),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(Var("plus"), Var("m")),
+                                                Ap(Var("S"), Var("x")),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("sym"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("m"),
+                                                    ),
+                                                    Ap(Var("S"), Var("x")),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Var("S"),
                                                   Ap(
                                                     Ap(
                                                       Var("plus"),
@@ -1868,109 +1948,18 @@ let nat_library: zterm =
                                                     Var("x"),
                                                   ),
                                                 ),
-                                                Fun(
-                                                  Text("x"),
-                                                  Var("nat"),
-                                                  Ap(Var("S"), Var("x")),
-                                                ),
                                               ),
                                               Ap(
-                                                Ap(Var("plus"), Var("m")),
-                                                Ap(Var("S"), Var("x")),
+                                                Ap(Var("plus-S"), Var("m")),
+                                                Var("x"),
                                               ),
                                             ),
-                                            Var("f1"),
                                           ),
                                           Ap(
+                                            Ap(Var("refl"), Var("nat")),
                                             Ap(
-                                              Ap(
-                                                Ap(
-                                                  Ap(
-                                                    Ap(
-                                                      Ap(
-                                                        Ap(
-                                                          Var("eq-step"),
-                                                          Var("nat"),
-                                                        ),
-                                                        Var("nat"),
-                                                      ),
-                                                      Ap(
-                                                        Var("S"),
-                                                        Ap(
-                                                          Ap(
-                                                            Var("plus"),
-                                                            Var("m"),
-                                                          ),
-                                                          Var("x"),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("m"),
-                                                      ),
-                                                      Ap(
-                                                        Var("S"),
-                                                        Var("x"),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Fun(
-                                                    Text("x"),
-                                                    Var("nat"),
-                                                    Var("x"),
-                                                  ),
-                                                ),
-                                                Ap(
-                                                  Ap(Var("plus"), Var("m")),
-                                                  Ap(Var("S"), Var("x")),
-                                                ),
-                                              ),
-                                              Ap(
-                                                Ap(
-                                                  Ap(
-                                                    Ap(
-                                                      Var("sym"),
-                                                      Var("nat"),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("m"),
-                                                      ),
-                                                      Ap(
-                                                        Var("S"),
-                                                        Var("x"),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Ap(
-                                                    Var("S"),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("m"),
-                                                      ),
-                                                      Var("x"),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Ap(
-                                                  Ap(
-                                                    Var("plus-S"),
-                                                    Var("m"),
-                                                  ),
-                                                  Var("x"),
-                                                ),
-                                              ),
-                                            ),
-                                            Ap(
-                                              Ap(Var("refl"), Var("nat")),
-                                              Ap(
-                                                Ap(Var("plus"), Var("m")),
-                                                Ap(Var("S"), Var("x")),
-                                              ),
+                                              Ap(Var("plus"), Var("m")),
+                                              Ap(Var("S"), Var("x")),
                                             ),
                                           ),
                                         ),
@@ -1978,7 +1967,6 @@ let nat_library: zterm =
                                     ),
                                   ),
                                 ),
-                                Var("n"),
                               ),
                             ),
                           ),
@@ -2065,6 +2053,65 @@ let nat_library: zterm =
                                             ),
                                           ),
                                         ),
+                                        Var("a"),
+                                      ),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Var("eq-step"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("Z"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("b"),
+                                                      ),
+                                                      Var("c"),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("b")),
+                                                  Var("c"),
+                                                ),
+                                              ),
+                                              Fun(
+                                                Text("x"),
+                                                Var("nat"),
+                                                Var("x"),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(
+                                                Var("plus"),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("Z")),
+                                                  Var("b"),
+                                                ),
+                                              ),
+                                              Var("c"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Var("Z-plus"),
+                                            Ap(
+                                              Ap(Var("plus"), Var("b")),
+                                              Var("c"),
+                                            ),
+                                          ),
+                                        ),
                                         Ap(
                                           Ap(
                                             Ap(
@@ -2078,32 +2125,26 @@ let nat_library: zterm =
                                                       ),
                                                       Var("nat"),
                                                     ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("Z"),
-                                                      ),
-                                                      Ap(
-                                                        Ap(
-                                                          Var("plus"),
-                                                          Var("b"),
-                                                        ),
-                                                        Var("c"),
-                                                      ),
-                                                    ),
+                                                    Var("b"),
                                                   ),
                                                   Ap(
                                                     Ap(
                                                       Var("plus"),
-                                                      Var("b"),
+                                                      Var("Z"),
                                                     ),
-                                                    Var("c"),
+                                                    Var("b"),
                                                   ),
                                                 ),
                                                 Fun(
                                                   Text("x"),
                                                   Var("nat"),
-                                                  Var("x"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("x"),
+                                                    ),
+                                                    Var("c"),
+                                                  ),
                                                 ),
                                               ),
                                               Ap(
@@ -2121,7 +2162,153 @@ let nat_library: zterm =
                                               ),
                                             ),
                                             Ap(
-                                              Var("Z-plus"),
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("sym"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("Z"),
+                                                    ),
+                                                    Var("b"),
+                                                  ),
+                                                ),
+                                                Var("b"),
+                                              ),
+                                              Ap(Var("Z-plus"), Var("b")),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(Var("refl"), Var("nat")),
+                                            Ap(
+                                              Ap(
+                                                Var("plus"),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("Z")),
+                                                  Var("b"),
+                                                ),
+                                              ),
+                                              Var("c"),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Fun(
+                                      Text("x"),
+                                      Var("nat"),
+                                      Fun(
+                                        Text("f1"),
+                                        Ap(
+                                          Fun(
+                                            Text("a"),
+                                            Var("nat"),
+                                            Ap(
+                                              Ap(
+                                                Ap(Var("eq"), Var("nat")),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("a")),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("b"),
+                                                    ),
+                                                    Var("c"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("a"),
+                                                    ),
+                                                    Var("b"),
+                                                  ),
+                                                ),
+                                                Var("c"),
+                                              ),
+                                            ),
+                                          ),
+                                          Var("x"),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Var("eq-step"),
+                                                        Var("nat"),
+                                                      ),
+                                                      Var("nat"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Ap(
+                                                          Var("S"),
+                                                          Var("x"),
+                                                        ),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Var("b"),
+                                                        ),
+                                                        Var("c"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Var("S"),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("x"),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Var("b"),
+                                                        ),
+                                                        Var("c"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Fun(
+                                                  Text("x"),
+                                                  Var("nat"),
+                                                  Var("x"),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                    Var("b"),
+                                                  ),
+                                                ),
+                                                Var("c"),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(Var("S-plus"), Var("x")),
                                               Ap(
                                                 Ap(Var("plus"), Var("b")),
                                                 Var("c"),
@@ -2141,156 +2328,6 @@ let nat_library: zterm =
                                                         ),
                                                         Var("nat"),
                                                       ),
-                                                      Var("b"),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("Z"),
-                                                      ),
-                                                      Var("b"),
-                                                    ),
-                                                  ),
-                                                  Fun(
-                                                    Text("x"),
-                                                    Var("nat"),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("x"),
-                                                      ),
-                                                      Var("c"),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Ap(
-                                                  Ap(
-                                                    Var("plus"),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("Z"),
-                                                      ),
-                                                      Var("b"),
-                                                    ),
-                                                  ),
-                                                  Var("c"),
-                                                ),
-                                              ),
-                                              Ap(
-                                                Ap(
-                                                  Ap(
-                                                    Ap(
-                                                      Var("sym"),
-                                                      Var("nat"),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("Z"),
-                                                      ),
-                                                      Var("b"),
-                                                    ),
-                                                  ),
-                                                  Var("b"),
-                                                ),
-                                                Ap(Var("Z-plus"), Var("b")),
-                                              ),
-                                            ),
-                                            Ap(
-                                              Ap(Var("refl"), Var("nat")),
-                                              Ap(
-                                                Ap(
-                                                  Var("plus"),
-                                                  Ap(
-                                                    Ap(
-                                                      Var("plus"),
-                                                      Var("Z"),
-                                                    ),
-                                                    Var("b"),
-                                                  ),
-                                                ),
-                                                Var("c"),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Fun(
-                                        Text("x"),
-                                        Var("nat"),
-                                        Fun(
-                                          Text("f1"),
-                                          Ap(
-                                            Fun(
-                                              Text("a"),
-                                              Var("nat"),
-                                              Ap(
-                                                Ap(
-                                                  Ap(Var("eq"), Var("nat")),
-                                                  Ap(
-                                                    Ap(
-                                                      Var("plus"),
-                                                      Var("a"),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("b"),
-                                                      ),
-                                                      Var("c"),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Ap(
-                                                  Ap(
-                                                    Var("plus"),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Var("a"),
-                                                      ),
-                                                      Var("b"),
-                                                    ),
-                                                  ),
-                                                  Var("c"),
-                                                ),
-                                              ),
-                                            ),
-                                            Var("x"),
-                                          ),
-                                          Ap(
-                                            Ap(
-                                              Ap(
-                                                Ap(
-                                                  Ap(
-                                                    Ap(
-                                                      Ap(
-                                                        Ap(
-                                                          Var("eq-step"),
-                                                          Var("nat"),
-                                                        ),
-                                                        Var("nat"),
-                                                      ),
-                                                      Ap(
-                                                        Ap(
-                                                          Var("plus"),
-                                                          Ap(
-                                                            Var("S"),
-                                                            Var("x"),
-                                                          ),
-                                                        ),
-                                                        Ap(
-                                                          Ap(
-                                                            Var("plus"),
-                                                            Var("b"),
-                                                          ),
-                                                          Var("c"),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Ap(
-                                                      Var("S"),
                                                       Ap(
                                                         Ap(
                                                           Var("plus"),
@@ -2305,11 +2342,24 @@ let nat_library: zterm =
                                                         ),
                                                       ),
                                                     ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Var("x"),
+                                                          ),
+                                                          Var("b"),
+                                                        ),
+                                                      ),
+                                                      Var("c"),
+                                                    ),
                                                   ),
                                                   Fun(
                                                     Text("x"),
                                                     Var("nat"),
-                                                    Var("x"),
+                                                    Ap(Var("S"), Var("x")),
                                                   ),
                                                 ),
                                                 Ap(
@@ -2329,13 +2379,7 @@ let nat_library: zterm =
                                                   Var("c"),
                                                 ),
                                               ),
-                                              Ap(
-                                                Ap(Var("S-plus"), Var("x")),
-                                                Ap(
-                                                  Ap(Var("plus"), Var("b")),
-                                                  Var("c"),
-                                                ),
-                                              ),
+                                              Var("f1"),
                                             ),
                                             Ap(
                                               Ap(
@@ -2351,14 +2395,17 @@ let nat_library: zterm =
                                                           Var("nat"),
                                                         ),
                                                         Ap(
-                                                          Ap(
-                                                            Var("plus"),
-                                                            Var("x"),
-                                                          ),
+                                                          Var("S"),
                                                           Ap(
                                                             Ap(
                                                               Var("plus"),
-                                                              Var("b"),
+                                                              Ap(
+                                                                Ap(
+                                                                  Var("plus"),
+                                                                  Var("x"),
+                                                                ),
+                                                                Var("b"),
+                                                              ),
                                                             ),
                                                             Var("c"),
                                                           ),
@@ -2368,11 +2415,14 @@ let nat_library: zterm =
                                                         Ap(
                                                           Var("plus"),
                                                           Ap(
+                                                            Var("S"),
                                                             Ap(
-                                                              Var("plus"),
-                                                              Var("x"),
+                                                              Ap(
+                                                                Var("plus"),
+                                                                Var("x"),
+                                                              ),
+                                                              Var("b"),
                                                             ),
-                                                            Var("b"),
                                                           ),
                                                         ),
                                                         Var("c"),
@@ -2381,10 +2431,7 @@ let nat_library: zterm =
                                                     Fun(
                                                       Text("x"),
                                                       Var("nat"),
-                                                      Ap(
-                                                        Var("S"),
-                                                        Var("x"),
-                                                      ),
+                                                      Var("x"),
                                                     ),
                                                   ),
                                                   Ap(
@@ -2404,7 +2451,61 @@ let nat_library: zterm =
                                                     Var("c"),
                                                   ),
                                                 ),
-                                                Var("f1"),
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Var("sym"),
+                                                        Var("nat"),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Ap(
+                                                            Var("S"),
+                                                            Ap(
+                                                              Ap(
+                                                                Var("plus"),
+                                                                Var("x"),
+                                                              ),
+                                                              Var("b"),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Var("c"),
+                                                      ),
+                                                    ),
+                                                    Ap(
+                                                      Var("S"),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Var("x"),
+                                                            ),
+                                                            Var("b"),
+                                                          ),
+                                                        ),
+                                                        Var("c"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("S-plus"),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Var("x"),
+                                                        ),
+                                                        Var("b"),
+                                                      ),
+                                                    ),
+                                                    Var("c"),
+                                                  ),
+                                                ),
                                               ),
                                               Ap(
                                                 Ap(
@@ -2424,17 +2525,9 @@ let nat_library: zterm =
                                                             Ap(
                                                               Ap(
                                                                 Var("plus"),
-                                                                Ap(
-                                                                  Ap(
-                                                                    Var(
-                                                                    "plus",
-                                                                    ),
-                                                                    Var("x"),
-                                                                  ),
-                                                                  Var("b"),
-                                                                ),
+                                                                Var("x"),
                                                               ),
-                                                              Var("c"),
+                                                              Var("b"),
                                                             ),
                                                           ),
                                                         ),
@@ -2443,22 +2536,22 @@ let nat_library: zterm =
                                                             Var("plus"),
                                                             Ap(
                                                               Var("S"),
-                                                              Ap(
-                                                                Ap(
-                                                                  Var("plus"),
-                                                                  Var("x"),
-                                                                ),
-                                                                Var("b"),
-                                                              ),
+                                                              Var("x"),
                                                             ),
                                                           ),
-                                                          Var("c"),
+                                                          Var("b"),
                                                         ),
                                                       ),
                                                       Fun(
                                                         Text("x"),
                                                         Var("nat"),
-                                                        Var("x"),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Var("x"),
+                                                          ),
+                                                          Var("c"),
+                                                        ),
                                                       ),
                                                     ),
                                                     Ap(
@@ -2490,38 +2583,14 @@ let nat_library: zterm =
                                                             Var("plus"),
                                                             Ap(
                                                               Var("S"),
-                                                              Ap(
-                                                                Ap(
-                                                                  Var("plus"),
-                                                                  Var("x"),
-                                                                ),
-                                                                Var("b"),
-                                                              ),
+                                                              Var("x"),
                                                             ),
                                                           ),
-                                                          Var("c"),
+                                                          Var("b"),
                                                         ),
                                                       ),
                                                       Ap(
                                                         Var("S"),
-                                                        Ap(
-                                                          Ap(
-                                                            Var("plus"),
-                                                            Ap(
-                                                              Ap(
-                                                                Var("plus"),
-                                                                Var("x"),
-                                                              ),
-                                                              Var("b"),
-                                                            ),
-                                                          ),
-                                                          Var("c"),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("S-plus"),
                                                         Ap(
                                                           Ap(
                                                             Var("plus"),
@@ -2530,135 +2599,36 @@ let nat_library: zterm =
                                                           Var("b"),
                                                         ),
                                                       ),
-                                                      Var("c"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("S-plus"),
+                                                        Var("x"),
+                                                      ),
+                                                      Var("b"),
                                                     ),
                                                   ),
                                                 ),
                                                 Ap(
                                                   Ap(
+                                                    Var("refl"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
                                                     Ap(
-                                                      Ap(
-                                                        Ap(
-                                                          Ap(
-                                                            Ap(
-                                                              Ap(
-                                                                Var(
-                                                                  "eq-step",
-                                                                ),
-                                                                Var("nat"),
-                                                              ),
-                                                              Var("nat"),
-                                                            ),
-                                                            Ap(
-                                                              Var("S"),
-                                                              Ap(
-                                                                Ap(
-                                                                  Var("plus"),
-                                                                  Var("x"),
-                                                                ),
-                                                                Var("b"),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Ap(
-                                                            Ap(
-                                                              Var("plus"),
-                                                              Ap(
-                                                                Var("S"),
-                                                                Var("x"),
-                                                              ),
-                                                            ),
-                                                            Var("b"),
-                                                          ),
-                                                        ),
-                                                        Fun(
-                                                          Text("x"),
-                                                          Var("nat"),
-                                                          Ap(
-                                                            Ap(
-                                                              Var("plus"),
-                                                              Var("x"),
-                                                            ),
-                                                            Var("c"),
-                                                          ),
-                                                        ),
-                                                      ),
+                                                      Var("plus"),
                                                       Ap(
                                                         Ap(
                                                           Var("plus"),
                                                           Ap(
-                                                            Ap(
-                                                              Var("plus"),
-                                                              Ap(
-                                                                Var("S"),
-                                                                Var("x"),
-                                                              ),
-                                                            ),
-                                                            Var("b"),
+                                                            Var("S"),
+                                                            Var("x"),
                                                           ),
-                                                        ),
-                                                        Var("c"),
-                                                      ),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Ap(
-                                                          Ap(
-                                                            Var("sym"),
-                                                            Var("nat"),
-                                                          ),
-                                                          Ap(
-                                                            Ap(
-                                                              Var("plus"),
-                                                              Ap(
-                                                                Var("S"),
-                                                                Var("x"),
-                                                              ),
-                                                            ),
-                                                            Var("b"),
-                                                          ),
-                                                        ),
-                                                        Ap(
-                                                          Var("S"),
-                                                          Ap(
-                                                            Ap(
-                                                              Var("plus"),
-                                                              Var("x"),
-                                                            ),
-                                                            Var("b"),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Ap(
-                                                        Ap(
-                                                          Var("S-plus"),
-                                                          Var("x"),
                                                         ),
                                                         Var("b"),
                                                       ),
                                                     ),
-                                                  ),
-                                                  Ap(
-                                                    Ap(
-                                                      Var("refl"),
-                                                      Var("nat"),
-                                                    ),
-                                                    Ap(
-                                                      Ap(
-                                                        Var("plus"),
-                                                        Ap(
-                                                          Ap(
-                                                            Var("plus"),
-                                                            Ap(
-                                                              Var("S"),
-                                                              Var("x"),
-                                                            ),
-                                                          ),
-                                                          Var("b"),
-                                                        ),
-                                                      ),
-                                                      Var("c"),
-                                                    ),
+                                                    Var("c"),
                                                   ),
                                                 ),
                                               ),
@@ -2667,7 +2637,6 @@ let nat_library: zterm =
                                         ),
                                       ),
                                     ),
-                                    Var("a"),
                                   ),
                                 ),
                               ),

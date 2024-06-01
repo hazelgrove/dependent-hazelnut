@@ -19,7 +19,12 @@ let text_of_text = (x: string) =>
 
 let dom_of_name = (~cursed: bool=false, x: name): Node.t =>
   switch (x) {
-  | Hole => if (cursed) {cursor_hole} else {hole}
+  | Hole =>
+    if (cursed) {
+      cursor_hole;
+    } else {
+      text("_");
+    }
   | Text(x) =>
     let dom = text(text_of_text(x));
     if (cursed) {
@@ -202,8 +207,13 @@ let rec dom_of_term =
     //     text(")"),
     //   ])
     | Ap({
-        i: _,
-        e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: e1}), e2}),
+        i: i1,
+        e1:
+          Ap({
+            i: i2,
+            e1: Ap({i: i3, e1: Ap({i: i4, e1: Var(r), e2: e1}), e2: scrut}),
+            e2,
+          }),
         e2: Fun({i: fi1, x, t: t1, e: Fun({i: fi2, x: y, t: t2, e: body})}),
       })
         when
@@ -214,10 +224,18 @@ let rec dom_of_term =
           && !fi2.cursed
           && !fi1.name_cursed
           && !fi2.name_cursed
+          && !i1.cursed
           && !i2.cursed
-          && !i3.cursed =>
+          && !i3.cursed
+          && !i4.cursed =>
       block_indent(
-        [dom_of_term(Var(r)), text(" "), dom_of_term(e1, ~inline=true)],
+        [
+          dom_of_term(Var(r)),
+          text(" "),
+          dom_of_term(e1, ~inline=true),
+          text(" @ "),
+          dom_of_term(scrut, ~inline=true),
+        ],
         Node.div([
           block_indent([text("Z"), text("→")], dom_of_term(e2)),
           block_indent(

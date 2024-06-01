@@ -2,11 +2,18 @@ open Terms;
 open Lang;
 
 // These functions place a cursor in the first hole, if there is one
-let find_hole_name = (x: name): option(zname) =>
-  switch (x) {
-  | Hole => Some(Cursor(Hole))
-  | Text(_) => None
-  };
+let find_hole_name =
+    (
+      _:
+        //x
+        name,
+    )
+    : option(zname) =>
+  None;
+// switch (x) {
+// | Hole => Some(Cursor(Hole))
+// | Text(_) => None
+// };
 
 let rec find_hole_term = (e: pterm) =>
   switch (e) {
