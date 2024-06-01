@@ -140,6 +140,10 @@
         event.preventDefault();
       }
     });
+    document.addEventListener('keyup', function (event) {
+      document.getElementsByClassName("cursor-hole-div")[0]?.scrollIntoViewIfNeeded()
+      document.getElementsByClassName("cursor-div")[0]?.scrollIntoViewIfNeeded()
+    });
   </script>
 </head>
 
