@@ -1020,145 +1020,1664 @@ let nat_library: zterm =
                   ),
                 ),
                 E2Let(
-                  Text("plus-Z"),
+                  Text("Z-plus"),
                   Arrow(
                     Text("n"),
                     Var("nat"),
                     Ap(
                       Ap(
                         Ap(Var("eq"), Var("nat")),
-                        Ap(Ap(Var("plus"), Var("n")), Var("Z")),
+                        Ap(Ap(Var("plus"), Var("Z")), Var("n")),
                       ),
                       Var("n"),
                     ),
                   ),
-                  Ap(
+                  Fun(
+                    Text("n"),
+                    Var("nat"),
                     Ap(
                       Ap(
-                        Var("nat-ind"),
-                        Fun(
-                          Text("n"),
-                          Var("nat"),
-                          Ap(
-                            Ap(
-                              Ap(Var("eq"), Var("nat")),
-                              Ap(Ap(Var("plus"), Var("n")), Var("Z")),
-                            ),
-                            Var("n"),
-                          ),
+                        Ap(
+                          Var("nat-ind-eq-Z"),
+                          Fun(Hole, Var("nat"), Var("nat")),
                         ),
+                        Var("n"),
                       ),
-                      Ap(
+                      Fun(Hole, Var("nat"), Var("S")),
+                    ),
+                  ),
+                  E2Let(
+                    Text("S-plus"),
+                    Arrow(
+                      Text("n"),
+                      Var("nat"),
+                      Arrow(
+                        Text("m"),
+                        Var("nat"),
                         Ap(
                           Ap(
-                            Var("nat-ind-eq-Z"),
-                            Fun(Hole, Var("nat"), Var("nat")),
+                            Ap(Var("eq"), Var("nat")),
+                            Ap(
+                              Ap(Var("plus"), Ap(Var("S"), Var("n"))),
+                              Var("m"),
+                            ),
                           ),
-                          Var("Z"),
+                          Ap(
+                            Var("S"),
+                            Ap(Ap(Var("plus"), Var("n")), Var("m")),
+                          ),
                         ),
-                        Fun(Hole, Var("nat"), Var("S")),
                       ),
                     ),
                     Fun(
-                      Text("x"),
+                      Text("n"),
                       Var("nat"),
                       Fun(
-                        Text("f1"),
+                        Text("m"),
+                        Var("nat"),
                         Ap(
-                          Fun(
-                            Text("n"),
+                          Ap(
+                            Ap(
+                              Ap(
+                                Var("nat-ind-eq-S"),
+                                Fun(Hole, Var("nat"), Var("nat")),
+                              ),
+                              Var("m"),
+                            ),
+                            Fun(Hole, Var("nat"), Var("S")),
+                          ),
+                          Var("n"),
+                        ),
+                      ),
+                    ),
+                    E2Let(
+                      Text("plus-Z"),
+                      Arrow(
+                        Text("n"),
+                        Var("nat"),
+                        Ap(
+                          Ap(
+                            Ap(Var("eq"), Var("nat")),
+                            Ap(Ap(Var("plus"), Var("n")), Var("Z")),
+                          ),
+                          Var("n"),
+                        ),
+                      ),
+                      Fun(
+                        Text("n"),
+                        Var("nat"),
+                        Ap(
+                          Ap(
+                            Ap(
+                              Ap(
+                                Var("nat-ind"),
+                                Fun(
+                                  Text("n"),
+                                  Var("nat"),
+                                  Ap(
+                                    Ap(
+                                      Ap(Var("eq"), Var("nat")),
+                                      Ap(
+                                        Ap(Var("plus"), Var("n")),
+                                        Var("Z"),
+                                      ),
+                                    ),
+                                    Var("n"),
+                                  ),
+                                ),
+                              ),
+                              Ap(Var("Z-plus"), Var("Z")),
+                            ),
+                            Fun(
+                              Text("x"),
+                              Var("nat"),
+                              Fun(
+                                Text("f1"),
+                                Ap(
+                                  Fun(
+                                    Text("n"),
+                                    Var("nat"),
+                                    Ap(
+                                      Ap(
+                                        Ap(Var("eq"), Var("nat")),
+                                        Ap(
+                                          Ap(Var("plus"), Var("n")),
+                                          Var("Z"),
+                                        ),
+                                      ),
+                                      Var("n"),
+                                    ),
+                                  ),
+                                  Var("x"),
+                                ),
+                                Ap(
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Var("eq-step"),
+                                                Var("nat"),
+                                              ),
+                                              Var("nat"),
+                                            ),
+                                            Ap(
+                                              Ap(
+                                                Var("plus"),
+                                                Ap(Var("S"), Var("x")),
+                                              ),
+                                              Var("Z"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Var("S"),
+                                            Ap(
+                                              Ap(Var("plus"), Var("x")),
+                                              Var("Z"),
+                                            ),
+                                          ),
+                                        ),
+                                        Fun(
+                                          Text("x"),
+                                          Var("nat"),
+                                          Var("x"),
+                                        ),
+                                      ),
+                                      Ap(Var("S"), Var("x")),
+                                    ),
+                                    Ap(
+                                      Ap(Var("S-plus"), Var("x")),
+                                      Var("Z"),
+                                    ),
+                                  ),
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Var("eq-step"),
+                                                  Var("nat"),
+                                                ),
+                                                Var("nat"),
+                                              ),
+                                              Ap(
+                                                Ap(Var("plus"), Var("x")),
+                                                Var("Z"),
+                                              ),
+                                            ),
+                                            Var("x"),
+                                          ),
+                                          Fun(
+                                            Text("x"),
+                                            Var("nat"),
+                                            Ap(Var("S"), Var("x")),
+                                          ),
+                                        ),
+                                        Ap(Var("S"), Var("x")),
+                                      ),
+                                      Var("f1"),
+                                    ),
+                                    Ap(
+                                      Ap(Var("refl"), Var("nat")),
+                                      Ap(Var("S"), Var("x")),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Var("n"),
+                        ),
+                      ),
+                      E2Let(
+                        Text("plus-S"),
+                        Arrow(
+                          Text("n"),
+                          Var("nat"),
+                          Arrow(
+                            Text("m"),
                             Var("nat"),
                             Ap(
                               Ap(
                                 Ap(Var("eq"), Var("nat")),
-                                Ap(Ap(Var("plus"), Var("n")), Var("Z")),
+                                Ap(
+                                  Ap(Var("plus"), Var("n")),
+                                  Ap(Var("S"), Var("m")),
+                                ),
+                              ),
+                              Ap(
+                                Var("S"),
+                                Ap(Ap(Var("plus"), Var("n")), Var("m")),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Fun(
+                          Text("n"),
+                          Var("nat"),
+                          Fun(
+                            Text("m"),
+                            Var("nat"),
+                            Ap(
+                              Ap(
+                                Ap(
+                                  Ap(
+                                    Var("nat-ind"),
+                                    Fun(
+                                      Text("n"),
+                                      Var("nat"),
+                                      Ap(
+                                        Ap(
+                                          Ap(Var("eq"), Var("nat")),
+                                          Ap(
+                                            Ap(Var("plus"), Var("n")),
+                                            Ap(Var("S"), Var("m")),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Var("S"),
+                                          Ap(
+                                            Ap(Var("plus"), Var("n")),
+                                            Var("m"),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Var("eq-step"),
+                                                  Var("nat"),
+                                                ),
+                                                Var("nat"),
+                                              ),
+                                              Ap(
+                                                Ap(Var("plus"), Var("Z")),
+                                                Ap(Var("S"), Var("m")),
+                                              ),
+                                            ),
+                                            Ap(Var("S"), Var("m")),
+                                          ),
+                                          Fun(
+                                            Text("x"),
+                                            Var("nat"),
+                                            Var("x"),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Var("S"),
+                                          Ap(
+                                            Ap(Var("plus"), Var("Z")),
+                                            Var("m"),
+                                          ),
+                                        ),
+                                      ),
+                                      Ap(
+                                        Var("Z-plus"),
+                                        Ap(Var("S"), Var("m")),
+                                      ),
+                                    ),
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("eq-step"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Var("nat"),
+                                                ),
+                                                Var("m"),
+                                              ),
+                                              Ap(
+                                                Ap(Var("plus"), Var("Z")),
+                                                Var("m"),
+                                              ),
+                                            ),
+                                            Fun(
+                                              Text("x"),
+                                              Var("nat"),
+                                              Ap(Var("S"), Var("x")),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Var("S"),
+                                            Ap(
+                                              Ap(Var("plus"), Var("Z")),
+                                              Var("m"),
+                                            ),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(Var("sym"), Var("nat")),
+                                              Ap(
+                                                Ap(Var("plus"), Var("Z")),
+                                                Var("m"),
+                                              ),
+                                            ),
+                                            Var("m"),
+                                          ),
+                                          Ap(Var("Z-plus"), Var("m")),
+                                        ),
+                                      ),
+                                      Ap(
+                                        Ap(Var("refl"), Var("nat")),
+                                        Ap(
+                                          Var("S"),
+                                          Ap(
+                                            Ap(Var("plus"), Var("Z")),
+                                            Var("m"),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Fun(
+                                  Text("x"),
+                                  Var("nat"),
+                                  Fun(
+                                    Text("f1"),
+                                    Ap(
+                                      Fun(
+                                        Text("n"),
+                                        Var("nat"),
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("eq"), Var("nat")),
+                                            Ap(
+                                              Ap(Var("plus"), Var("n")),
+                                              Ap(Var("S"), Var("m")),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Var("S"),
+                                            Ap(
+                                              Ap(Var("plus"), Var("n")),
+                                              Var("m"),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Var("x"),
+                                    ),
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("eq-step"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Var("nat"),
+                                                ),
+                                                Ap(
+                                                  Ap(
+                                                    Var("plus"),
+                                                    Ap(Var("S"), Var("x")),
+                                                  ),
+                                                  Ap(Var("S"), Var("m")),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Var("S"),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("x")),
+                                                  Ap(Var("S"), Var("m")),
+                                                ),
+                                              ),
+                                            ),
+                                            Fun(
+                                              Text("x"),
+                                              Var("nat"),
+                                              Var("x"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Var("S"),
+                                            Ap(
+                                              Ap(
+                                                Var("plus"),
+                                                Ap(Var("S"), Var("x")),
+                                              ),
+                                              Var("m"),
+                                            ),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(Var("S-plus"), Var("x")),
+                                          Ap(Var("S"), Var("m")),
+                                        ),
+                                      ),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Var("eq-step"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("x"),
+                                                    ),
+                                                    Ap(Var("S"), Var("m")),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Var("S"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("x"),
+                                                    ),
+                                                    Var("m"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Fun(
+                                                Text("x"),
+                                                Var("nat"),
+                                                Ap(Var("S"), Var("x")),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Var("S"),
+                                              Ap(
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(Var("S"), Var("x")),
+                                                ),
+                                                Var("m"),
+                                              ),
+                                            ),
+                                          ),
+                                          Var("f1"),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Var("eq-step"),
+                                                        Var("nat"),
+                                                      ),
+                                                      Var("nat"),
+                                                    ),
+                                                    Ap(
+                                                      Var("S"),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Var("x"),
+                                                        ),
+                                                        Var("m"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                    Var("m"),
+                                                  ),
+                                                ),
+                                                Fun(
+                                                  Text("x"),
+                                                  Var("nat"),
+                                                  Ap(Var("S"), Var("x")),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Var("S"),
+                                                Ap(
+                                                  Ap(
+                                                    Var("plus"),
+                                                    Ap(Var("S"), Var("x")),
+                                                  ),
+                                                  Var("m"),
+                                                ),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("sym"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                    Var("m"),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Var("S"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("x"),
+                                                    ),
+                                                    Var("m"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(Var("S-plus"), Var("x")),
+                                                Var("m"),
+                                              ),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(Var("refl"), Var("nat")),
+                                            Ap(
+                                              Var("S"),
+                                              Ap(
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(Var("S"), Var("x")),
+                                                ),
+                                                Var("m"),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                               Var("n"),
                             ),
                           ),
-                          Var("x"),
                         ),
-                        Ap(
-                          Ap(
-                            Ap(
+                        E2Let(
+                          Text("plus-comm"),
+                          Arrow(
+                            Text("n"),
+                            Var("nat"),
+                            Arrow(
+                              Text("m"),
+                              Var("nat"),
                               Ap(
                                 Ap(
-                                  Ap(
-                                    Ap(
-                                      Ap(Var("eq-step"), Var("nat")),
-                                      Var("nat"),
-                                    ),
-                                    Ap(
-                                      Ap(
-                                        Var("plus"),
-                                        Ap(Var("S"), Var("x")),
-                                      ),
-                                      Var("Z"),
-                                    ),
-                                  ),
-                                  Ap(
-                                    Var("S"),
-                                    Ap(
-                                      Ap(Var("plus"), Var("x")),
-                                      Var("Z"),
-                                    ),
-                                  ),
+                                  Ap(Var("eq"), Var("nat")),
+                                  Ap(Ap(Var("plus"), Var("n")), Var("m")),
                                 ),
-                                Fun(Text("x"), Var("nat"), Var("x")),
+                                Ap(Ap(Var("plus"), Var("m")), Var("n")),
                               ),
-                              Ap(Var("S"), Var("x")),
-                            ),
-                            Ap(
-                              Ap(
-                                Ap(
-                                  Ap(
-                                    Var("nat-ind-eq-S"),
-                                    Fun(Hole, Var("nat"), Var("nat")),
-                                  ),
-                                  Var("Z"),
-                                ),
-                                Fun(Hole, Var("nat"), Var("S")),
-                              ),
-                              Var("x"),
                             ),
                           ),
-                          Ap(
-                            Ap(
+                          Fun(
+                            Text("n"),
+                            Var("nat"),
+                            Fun(
+                              Text("m"),
+                              Var("nat"),
                               Ap(
                                 Ap(
                                   Ap(
                                     Ap(
-                                      Ap(
-                                        Ap(Var("eq-step"), Var("nat")),
+                                      Var("nat-ind"),
+                                      Fun(
+                                        Text("n"),
                                         Var("nat"),
-                                      ),
-                                      Ap(
-                                        Ap(Var("plus"), Var("x")),
-                                        Var("Z"),
+                                        Ap(
+                                          Ap(
+                                            Ap(Var("eq"), Var("nat")),
+                                            Ap(
+                                              Ap(Var("plus"), Var("n")),
+                                              Var("m"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(Var("plus"), Var("m")),
+                                            Var("n"),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    Var("x"),
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Var("eq-step"),
+                                                    Var("nat"),
+                                                  ),
+                                                  Var("nat"),
+                                                ),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("Z")),
+                                                  Var("m"),
+                                                ),
+                                              ),
+                                              Var("m"),
+                                            ),
+                                            Fun(
+                                              Text("x"),
+                                              Var("nat"),
+                                              Var("x"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(Var("plus"), Var("m")),
+                                            Var("Z"),
+                                          ),
+                                        ),
+                                        Ap(Var("Z-plus"), Var("m")),
+                                      ),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Var("eq-step"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Var("nat"),
+                                                  ),
+                                                  Var("m"),
+                                                ),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("m")),
+                                                  Var("Z"),
+                                                ),
+                                              ),
+                                              Fun(
+                                                Text("x"),
+                                                Var("nat"),
+                                                Var("x"),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(Var("plus"), Var("m")),
+                                              Var("Z"),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(Var("sym"), Var("nat")),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("m")),
+                                                  Var("Z"),
+                                                ),
+                                              ),
+                                              Var("m"),
+                                            ),
+                                            Ap(Var("plus-Z"), Var("m")),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(Var("refl"), Var("nat")),
+                                          Ap(
+                                            Ap(Var("plus"), Var("m")),
+                                            Var("Z"),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                   Fun(
                                     Text("x"),
                                     Var("nat"),
-                                    Ap(Var("S"), Var("x")),
+                                    Fun(
+                                      Text("f1"),
+                                      Ap(
+                                        Fun(
+                                          Text("n"),
+                                          Var("nat"),
+                                          Ap(
+                                            Ap(
+                                              Ap(Var("eq"), Var("nat")),
+                                              Ap(
+                                                Ap(Var("plus"), Var("n")),
+                                                Var("m"),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(Var("plus"), Var("m")),
+                                              Var("n"),
+                                            ),
+                                          ),
+                                        ),
+                                        Var("x"),
+                                      ),
+                                      Ap(
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Var("eq-step"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Var("nat"),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                    Var("m"),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Var("S"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("x"),
+                                                    ),
+                                                    Var("m"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Fun(
+                                                Text("x"),
+                                                Var("nat"),
+                                                Var("x"),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(Var("plus"), Var("m")),
+                                              Ap(Var("S"), Var("x")),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(Var("S-plus"), Var("x")),
+                                            Var("m"),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Var("eq-step"),
+                                                        Var("nat"),
+                                                      ),
+                                                      Var("nat"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("x"),
+                                                      ),
+                                                      Var("m"),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("m"),
+                                                    ),
+                                                    Var("x"),
+                                                  ),
+                                                ),
+                                                Fun(
+                                                  Text("x"),
+                                                  Var("nat"),
+                                                  Ap(Var("S"), Var("x")),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(Var("plus"), Var("m")),
+                                                Ap(Var("S"), Var("x")),
+                                              ),
+                                            ),
+                                            Var("f1"),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Var("eq-step"),
+                                                          Var("nat"),
+                                                        ),
+                                                        Var("nat"),
+                                                      ),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Var("m"),
+                                                          ),
+                                                          Var("x"),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("m"),
+                                                      ),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Fun(
+                                                    Text("x"),
+                                                    Var("nat"),
+                                                    Var("x"),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("m")),
+                                                  Ap(Var("S"), Var("x")),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Var("sym"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("m"),
+                                                      ),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Var("S"),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("m"),
+                                                      ),
+                                                      Var("x"),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Ap(
+                                                    Var("plus-S"),
+                                                    Var("m"),
+                                                  ),
+                                                  Var("x"),
+                                                ),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(Var("refl"), Var("nat")),
+                                              Ap(
+                                                Ap(Var("plus"), Var("m")),
+                                                Ap(Var("S"), Var("x")),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                Ap(Var("S"), Var("x")),
+                                Var("n"),
                               ),
-                              Var("f1"),
                             ),
-                            Ap(
-                              Ap(Var("refl"), Var("nat")),
-                              Ap(Var("S"), Var("x")),
+                          ),
+                          E2Let(
+                            Text("plus-assoc"),
+                            Arrow(
+                              Text("a"),
+                              Var("nat"),
+                              Arrow(
+                                Text("b"),
+                                Var("nat"),
+                                Arrow(
+                                  Text("c"),
+                                  Var("nat"),
+                                  Ap(
+                                    Ap(
+                                      Ap(Var("eq"), Var("nat")),
+                                      Ap(
+                                        Ap(Var("plus"), Var("a")),
+                                        Ap(
+                                          Ap(Var("plus"), Var("b")),
+                                          Var("c"),
+                                        ),
+                                      ),
+                                    ),
+                                    Ap(
+                                      Ap(
+                                        Var("plus"),
+                                        Ap(
+                                          Ap(Var("plus"), Var("a")),
+                                          Var("b"),
+                                        ),
+                                      ),
+                                      Var("c"),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
+                            Fun(
+                              Text("a"),
+                              Var("nat"),
+                              Fun(
+                                Text("b"),
+                                Var("nat"),
+                                Fun(
+                                  Text("c"),
+                                  Var("nat"),
+                                  Ap(
+                                    Ap(
+                                      Ap(
+                                        Ap(
+                                          Var("nat-ind"),
+                                          Fun(
+                                            Text("a"),
+                                            Var("nat"),
+                                            Ap(
+                                              Ap(
+                                                Ap(Var("eq"), Var("nat")),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("a")),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("b"),
+                                                    ),
+                                                    Var("c"),
+                                                  ),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("a"),
+                                                    ),
+                                                    Var("b"),
+                                                  ),
+                                                ),
+                                                Var("c"),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Ap(
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Var("eq-step"),
+                                                        Var("nat"),
+                                                      ),
+                                                      Var("nat"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("Z"),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Var("b"),
+                                                        ),
+                                                        Var("c"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("b"),
+                                                    ),
+                                                    Var("c"),
+                                                  ),
+                                                ),
+                                                Fun(
+                                                  Text("x"),
+                                                  Var("nat"),
+                                                  Var("x"),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("Z"),
+                                                    ),
+                                                    Var("b"),
+                                                  ),
+                                                ),
+                                                Var("c"),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Var("Z-plus"),
+                                              Ap(
+                                                Ap(Var("plus"), Var("b")),
+                                                Var("c"),
+                                              ),
+                                            ),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Var("eq-step"),
+                                                          Var("nat"),
+                                                        ),
+                                                        Var("nat"),
+                                                      ),
+                                                      Var("b"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("Z"),
+                                                      ),
+                                                      Var("b"),
+                                                    ),
+                                                  ),
+                                                  Fun(
+                                                    Text("x"),
+                                                    Var("nat"),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("x"),
+                                                      ),
+                                                      Var("c"),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Ap(
+                                                    Var("plus"),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("Z"),
+                                                      ),
+                                                      Var("b"),
+                                                    ),
+                                                  ),
+                                                  Var("c"),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Var("sym"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("Z"),
+                                                      ),
+                                                      Var("b"),
+                                                    ),
+                                                  ),
+                                                  Var("b"),
+                                                ),
+                                                Ap(Var("Z-plus"), Var("b")),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(Var("refl"), Var("nat")),
+                                              Ap(
+                                                Ap(
+                                                  Var("plus"),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("Z"),
+                                                    ),
+                                                    Var("b"),
+                                                  ),
+                                                ),
+                                                Var("c"),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Fun(
+                                        Text("x"),
+                                        Var("nat"),
+                                        Fun(
+                                          Text("f1"),
+                                          Ap(
+                                            Fun(
+                                              Text("a"),
+                                              Var("nat"),
+                                              Ap(
+                                                Ap(
+                                                  Ap(Var("eq"), Var("nat")),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Var("a"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("b"),
+                                                      ),
+                                                      Var("c"),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Ap(
+                                                    Var("plus"),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Var("a"),
+                                                      ),
+                                                      Var("b"),
+                                                    ),
+                                                  ),
+                                                  Var("c"),
+                                                ),
+                                              ),
+                                            ),
+                                            Var("x"),
+                                          ),
+                                          Ap(
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Var("eq-step"),
+                                                          Var("nat"),
+                                                        ),
+                                                        Var("nat"),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Ap(
+                                                            Var("S"),
+                                                            Var("x"),
+                                                          ),
+                                                        ),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Var("b"),
+                                                          ),
+                                                          Var("c"),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Ap(
+                                                      Var("S"),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Var("x"),
+                                                        ),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Var("b"),
+                                                          ),
+                                                          Var("c"),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Fun(
+                                                    Text("x"),
+                                                    Var("nat"),
+                                                    Var("x"),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Ap(
+                                                    Var("plus"),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Ap(
+                                                          Var("S"),
+                                                          Var("x"),
+                                                        ),
+                                                      ),
+                                                      Var("b"),
+                                                    ),
+                                                  ),
+                                                  Var("c"),
+                                                ),
+                                              ),
+                                              Ap(
+                                                Ap(Var("S-plus"), Var("x")),
+                                                Ap(
+                                                  Ap(Var("plus"), Var("b")),
+                                                  Var("c"),
+                                                ),
+                                              ),
+                                            ),
+                                            Ap(
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Ap(
+                                                            Var("eq-step"),
+                                                            Var("nat"),
+                                                          ),
+                                                          Var("nat"),
+                                                        ),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Var("x"),
+                                                          ),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Var("b"),
+                                                            ),
+                                                            Var("c"),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Var("x"),
+                                                            ),
+                                                            Var("b"),
+                                                          ),
+                                                        ),
+                                                        Var("c"),
+                                                      ),
+                                                    ),
+                                                    Fun(
+                                                      Text("x"),
+                                                      Var("nat"),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("plus"),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Ap(
+                                                            Var("S"),
+                                                            Var("x"),
+                                                          ),
+                                                        ),
+                                                        Var("b"),
+                                                      ),
+                                                    ),
+                                                    Var("c"),
+                                                  ),
+                                                ),
+                                                Var("f1"),
+                                              ),
+                                              Ap(
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Ap(
+                                                            Ap(
+                                                              Var("eq-step"),
+                                                              Var("nat"),
+                                                            ),
+                                                            Var("nat"),
+                                                          ),
+                                                          Ap(
+                                                            Var("S"),
+                                                            Ap(
+                                                              Ap(
+                                                                Var("plus"),
+                                                                Ap(
+                                                                  Ap(
+                                                                    Var(
+                                                                    "plus",
+                                                                    ),
+                                                                    Var("x"),
+                                                                  ),
+                                                                  Var("b"),
+                                                                ),
+                                                              ),
+                                                              Var("c"),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Ap(
+                                                              Var("S"),
+                                                              Ap(
+                                                                Ap(
+                                                                  Var("plus"),
+                                                                  Var("x"),
+                                                                ),
+                                                                Var("b"),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Var("c"),
+                                                        ),
+                                                      ),
+                                                      Fun(
+                                                        Text("x"),
+                                                        Var("nat"),
+                                                        Var("x"),
+                                                      ),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Ap(
+                                                              Var("S"),
+                                                              Var("x"),
+                                                            ),
+                                                          ),
+                                                          Var("b"),
+                                                        ),
+                                                      ),
+                                                      Var("c"),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Var("sym"),
+                                                          Var("nat"),
+                                                        ),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Ap(
+                                                              Var("S"),
+                                                              Ap(
+                                                                Ap(
+                                                                  Var("plus"),
+                                                                  Var("x"),
+                                                                ),
+                                                                Var("b"),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Var("c"),
+                                                        ),
+                                                      ),
+                                                      Ap(
+                                                        Var("S"),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Ap(
+                                                              Ap(
+                                                                Var("plus"),
+                                                                Var("x"),
+                                                              ),
+                                                              Var("b"),
+                                                            ),
+                                                          ),
+                                                          Var("c"),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("S-plus"),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Var("x"),
+                                                          ),
+                                                          Var("b"),
+                                                        ),
+                                                      ),
+                                                      Var("c"),
+                                                    ),
+                                                  ),
+                                                ),
+                                                Ap(
+                                                  Ap(
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Ap(
+                                                            Ap(
+                                                              Ap(
+                                                                Var(
+                                                                  "eq-step",
+                                                                ),
+                                                                Var("nat"),
+                                                              ),
+                                                              Var("nat"),
+                                                            ),
+                                                            Ap(
+                                                              Var("S"),
+                                                              Ap(
+                                                                Ap(
+                                                                  Var("plus"),
+                                                                  Var("x"),
+                                                                ),
+                                                                Var("b"),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Ap(
+                                                                Var("S"),
+                                                                Var("x"),
+                                                              ),
+                                                            ),
+                                                            Var("b"),
+                                                          ),
+                                                        ),
+                                                        Fun(
+                                                          Text("x"),
+                                                          Var("nat"),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Var("x"),
+                                                            ),
+                                                            Var("c"),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("plus"),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Ap(
+                                                                Var("S"),
+                                                                Var("x"),
+                                                              ),
+                                                            ),
+                                                            Var("b"),
+                                                          ),
+                                                        ),
+                                                        Var("c"),
+                                                      ),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Ap(
+                                                          Ap(
+                                                            Var("sym"),
+                                                            Var("nat"),
+                                                          ),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Ap(
+                                                                Var("S"),
+                                                                Var("x"),
+                                                              ),
+                                                            ),
+                                                            Var("b"),
+                                                          ),
+                                                        ),
+                                                        Ap(
+                                                          Var("S"),
+                                                          Ap(
+                                                            Ap(
+                                                              Var("plus"),
+                                                              Var("x"),
+                                                            ),
+                                                            Var("b"),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Ap(
+                                                        Ap(
+                                                          Var("S-plus"),
+                                                          Var("x"),
+                                                        ),
+                                                        Var("b"),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Ap(
+                                                    Ap(
+                                                      Var("refl"),
+                                                      Var("nat"),
+                                                    ),
+                                                    Ap(
+                                                      Ap(
+                                                        Var("plus"),
+                                                        Ap(
+                                                          Ap(
+                                                            Var("plus"),
+                                                            Ap(
+                                                              Var("S"),
+                                                              Var("x"),
+                                                            ),
+                                                          ),
+                                                          Var("b"),
+                                                        ),
+                                                      ),
+                                                      Var("c"),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Var("a"),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Cursor(Hole),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  Cursor(Hole),
                 ),
               ),
             ),
@@ -1708,5 +3227,5 @@ let int_library: zterm =
     ),
   );
 
-let library = compose_libraries([eq_library, nat_library]);
-let context_library = compose_libraries([exists_library]);
+let library = compose_libraries([nat_library]);
+let context_library = compose_libraries([exists_library, eq_library]);

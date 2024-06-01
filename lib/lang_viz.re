@@ -305,6 +305,42 @@ let rec dom_of_term =
         | _ => set_info(ea, {...get_info(ea), highlighted: true})
         };
       let fa = Lang.beta_sub(highlighted_ea, body);
+      let eq =
+        switch (ee1) {
+        | Ap({
+            i,
+            e1:
+              Ap({
+                i: _,
+                e1:
+                  Ap({
+                    i: _,
+                    e1: Ap({i: _, e1: Var(r), e2: hide1}),
+                    e2: hide2,
+                  }),
+                e2: hide3,
+              }),
+            e2: inner_eq,
+          })
+            when
+              r.x == "sym"
+              && (
+                !(i.cursed || i.cursor_inside)
+                || get_info(inner_eq).cursor_inside
+                || get_info(inner_eq).cursed
+              )
+              && hideable(hide1)
+              && hideable(hide2)
+              && hideable(hide3) =>
+          Ap({i, e1: Var(r), e2: inner_eq})
+        | _ => ee1
+        };
+      let eq =
+        dom_of_term(
+          eq,
+          ~inline=true,
+          ~parens_info={...default_parens_info, no_parens: true},
+        );
       let rest =
         switch (ee2) {
         | Ap({i: _, e1: Ap({i: _, e1: Var(r), e2: _}), e2: _})
@@ -316,11 +352,7 @@ let rec dom_of_term =
         oneline([
           dom_of_term(fa, ~inline=true),
           text("=⟨"),
-          dom_of_term(
-            ee1,
-            ~inline=true,
-            ~parens_info={...default_parens_info, no_parens: true},
-          ),
+          eq,
           text("⟩"),
         ]),
         Node.br(),
