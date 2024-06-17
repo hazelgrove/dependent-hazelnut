@@ -54,28 +54,28 @@ let rec dom_of_term =
           ~under_cursor=false,
           ~inline=false,
           ~parens_info: parens_info=default_parens_info,
-          e: term,
+          (i, e): info_term,
         )
         : Node.t => {
-  let hideable = e => {
-    !(get_info(e).cursed || get_info(e).cursor_inside) && complete(e);
+  let hideable = ((i, e): info_term): bool => {
+    !(i.cursed || i.cursor_inside) && complete(sterm_of_term((i, e)));
   };
   let dom =
     switch (e) {
-    | Hole(r) when r.i.cursed => cursor_hole
-    | e when get_info(e).cursed && !under_cursor =>
-      cursor([dom_of_term(~under_cursor=true, ~inline, e)])
-    | Hole(_) => hole
-    | Typ(_) => text("◻")
-    | Mark(r) =>
+    | Hole when i.cursed => cursor_hole
+    | e when i.cursed && !under_cursor =>
+      cursor([dom_of_term(~under_cursor=true, ~inline, (i, e))])
+    | Hole => hole
+    | Typ => text("◻")
+    | Mark(_, e) =>
       mark([
         dom_of_term(
           ~inline,
           ~parens_info={...default_parens_info, no_parens: true},
-          r.e,
+          e,
         ),
       ])
-    | Var(r) =>
+    | Var(x, _) =>
       // I think this is buggy, the context is wrong
       // let rec check_shadowed = (idx, ctx) =>
       //   switch (ctx) {
@@ -102,23 +102,23 @@ let rec dom_of_term =
       //     | _ => ""
       //     }
       //   };
-      text(text_of_text(r.x)) // ++ string_of_idx);
-    | Arrow(r) =>
+      text(text_of_text(x)) // ++ string_of_idx);
+    | Arrow(x, t1, t2) =>
       let dom = {
         let binding =
-          switch (r.x) {
-          | Hole when !(r.i.name_cursed || r.i.cursed) => []
-          | _ => [dom_of_name(r.x, ~cursed=r.i.name_cursed), text(":")]
+          switch (x) {
+          | Hole when !(i.name_cursed || i.cursed) => []
+          | _ => [dom_of_name(x, ~cursed=i.name_cursed), text(":")]
           };
         oneline(
           binding
           @ [
-            dom_of_term(~inline=true, r.t1),
+            dom_of_term(~inline=true, t1),
             text("⇒"),
             dom_of_term(
               ~inline=true,
               ~parens_info={...default_parens_info, arrow_assoc: true},
-              r.t2,
+              t2,
             ),
           ],
         );
@@ -128,18 +128,18 @@ let rec dom_of_term =
       } else {
         parens(dom);
       };
-    | Fun(r) =>
+    | Fun(x, t, e) =>
       let dom1 = [
-        dom_of_name(r.x, ~cursed=r.i.name_cursed),
+        dom_of_name(x, ~cursed=i.name_cursed),
         text(":"),
-        dom_of_term(~inline=true, r.t),
+        dom_of_term(~inline=true, t),
         text("→"),
       ];
       let dom2 =
         dom_of_term(
           ~inline,
           ~parens_info={...default_parens_info, fun_assoc: true},
-          r.e,
+          e,
         );
       if (inline) {
         let dom = oneline(dom1 @ [dom2]);
@@ -151,25 +151,23 @@ let rec dom_of_term =
       } else {
         block_indent(dom1, dom2);
       };
-    | Ap({
-        i: i1,
-        e1: Ap({i: i2, e1: Var(r), e2: t1}),
-        e2: Fun({i: i3, x: Text(x), t: t2, e: body}),
-      })
+    | Ap(
+        (i2, Ap((i3, Var("exists", _)) as v, t1)),
+        (i4, Fun(Text(x), t2, body)),
+      )
         when
-          r.x == "exists"
-          && terms_equal(t1, t2)
+          terms_equal(sterm_of_term(t1), sterm_of_term(t2))
           && !(
-               i1.cursed
+               i.cursed
                || i2.cursed
-               || r.i.cursed
                || i3.cursed
-               || i3.name_cursed
+               || i4.cursed
+               || i4.name_cursed
              )
           && hideable(t2) =>
       oneline([
         text("("),
-        dom_of_term(Var(r)),
+        dom_of_term(v),
         dom_of_name(Text(x), ~cursed=i3.name_cursed),
         text(":"),
         dom_of_term(t1),
@@ -177,24 +175,14 @@ let rec dom_of_term =
         dom_of_term(~inline=true, body),
         text(")"),
       ])
-    | Ap({
-        i: _,
-        e1: Ap({i: i2, e1: Ap({i: i3, e1: Var(r), e2: t1}), e2: t2}),
-        e2: t3,
-      })
-        when
-          r.x == "eq"
-          && !(
-               //  i1.cursed ||
-               i2.cursed || i3.cursed || r.i.cursed
-             )
-          && hideable(t1) =>
+    | Ap((i2, Ap((i3, Ap((i4, Var("eq", _)) as v, t1)), t2)), t3)
+        when !(i2.cursed || i3.cursed || i4.cursed) && hideable(t1) =>
       oneline([
         text("("),
         dom_of_term(t2),
-        dom_of_term(Var(r)),
+        dom_of_term(v),
         // text("["),
-        // dom_of_term(c, en, completes, t1),
+        // dom_of_term(t1),
         // text("]"),
         dom_of_term(t3),
         text(")"),
@@ -206,31 +194,31 @@ let rec dom_of_term =
     //     dom_of_term(c, en, completes, e),
     //     text(")"),
     //   ])
-    | Ap({
-        i: i1,
-        e1:
-          Ap({
-            i: i2,
-            e1: Ap({i: i3, e1: Ap({i: i4, e1: Var(r), e2: e1}), e2: scrut}),
+    | Ap(
+        (
+          i2,
+          Ap(
+            (i3, Ap((i4, Ap((i5, Var("nat-ind", _)) as v, e1)), scrut)),
             e2,
-          }),
-        e2: Fun({i: fi1, x, t: t1, e: Fun({i: fi2, x: y, t: t2, e: body})}),
-      })
+          ),
+        ),
+        (fi1, Fun(x, t1, (fi2, Fun(y, t2, body)))),
+      )
         when
-          r.x == "nat-ind"
-          && hideable(t1)
+          hideable(t1)
           && hideable(t2)
           && !fi1.cursed
           && !fi2.cursed
           && !fi1.name_cursed
           && !fi2.name_cursed
-          && !i1.cursed
+          && !i.cursed
           && !i2.cursed
           && !i3.cursed
-          && !i4.cursed =>
+          && !i4.cursed
+          && !i5.cursed =>
       block_indent(
         [
-          dom_of_term(Var(r)),
+          dom_of_term(v),
           text(" "),
           dom_of_term(e1, ~inline=true),
           text(" @ "),
@@ -250,58 +238,100 @@ let rec dom_of_term =
           ),
         ]),
       )
-    | Ap({
-        i: i1,
-        e1:
-          Ap({
-            i: _, //i2,
-            e1:
-              Ap({
-                i: _, //i3,
-                e1:
-                  Ap({
-                    i: _, //i4,
-                    e1:
-                      Ap({
-                        i: _, //i5,
-                        e1:
-                          Ap({
-                            i: _, //i6,
-                            e1:
-                              Ap({
-                                i: _, //i7,
-                                e1:
-                                  Ap({
-                                    i: _, //i8,
-                                    e1: Var(r),
-                                    e2: hide1,
-                                  }),
-                                e2: hide2,
-                              }),
-                            e2: ea,
-                          }),
-                        e2: hide3,
-                      }),
-                    e2: Fun({i: _, x: _, t: _, e: body}) as hide4,
-                  }),
-                e2: ec,
-              }),
-            e2: ee1,
-          }),
-        e2: ee2,
-      })
+    | Ap(
+        (
+          _,
+          Ap(
+            (
+              _,
+              Ap(
+                (
+                  _,
+                  Ap(
+                    (
+                      _,
+                      Ap(
+                        (
+                          _,
+                          Ap(
+                            (
+                              _,
+                              Ap(
+                                (
+                                  _,
+                                  Ap((_, Var("eq-step", _)) as v, hide1),
+                                ),
+                                hide2,
+                              ),
+                            ),
+                            ea,
+                          ),
+                        ),
+                        hide3,
+                      ),
+                    ),
+                    (_, Fun(_, _, body)) as hide4,
+                  ),
+                ),
+                ec,
+              ),
+            ),
+            ee1,
+          ),
+        ),
+        ee2,
+      )
+        // | Ap({
+        //     i: i1,
+        //     e1:
+        //       Ap({
+        //         i: _, //i2,
+        //         e1:
+        //           Ap({
+        //             i: _, //i3,
+        //             e1:
+        //               Ap({
+        //                 i: _, //i4,
+        //                 e1:
+        //                   Ap({
+        //                     i: _, //i5,
+        //                     e1:
+        //                       Ap({
+        //                         i: _, //i6,
+        //                         e1:
+        //                           Ap({
+        //                             i: _, //i7,
+        //                             e1:
+        //                               Ap({
+        //                                 i: _, //i8,
+        //                                 e1: Var(r),
+        //                                 e2: hide1,
+        //                               }),
+        //                             e2: hide2,
+        //                           }),
+        //                         e2: ea,
+        //                       }),
+        //                     e2: hide3,
+        //                   }),
+        //                 e2: Fun({i: _, x: _, t: _, e: body}) as hide4,
+        //               }),
+        //             e2: ec,
+        //           }),
+        //         e2: ee1,
+        //       }),
+        //     e2: ee2,
+        //   })
         when
-          r.x == "eq-step"
-          && (
-            !i1.cursor_inside
-            || get_info(ea).cursor_inside
-            || get_info(ea).cursed
-            || get_info(ee1).cursor_inside
-            || get_info(ee1).cursed
-            // || get_info(body).cursor_inside
-            // || get_info(body).cursed
-            || get_info(ee2).cursor_inside
-            || get_info(ee2).cursed
+          (
+            !i.cursor_inside
+            || fst(ea).cursor_inside
+            || fst(ea).cursed
+            || fst(ee1).cursor_inside
+            || fst(ee1).cursed
+            // || fst(body).cursor_inside
+            // || fst(body).cursed
+            || fst(ee2).cursor_inside
+            || fst(ee2).cursed
           )
           && hideable(hide1)
           && hideable(hide2)
@@ -319,8 +349,8 @@ let rec dom_of_term =
       // && !i3.cursed
       let highlighted_ea =
         switch (body) {
-        | Var(_) => ea // for trivial congruence, don't highlight the rewritten subterm
-        | _ => set_info(ea, {...get_info(ea), highlighted: true})
+        | (_, Var(_)) => ea // for trivial congruence, don't highlight the rewritten subterm
+        | _ => ({...fst(ea), highlighted: true}, snd(ea))
         };
       let fa = Lang.beta_sub(highlighted_ea, body);
       let eq =
@@ -407,7 +437,7 @@ let rec dom_of_term =
         dom_of_term(r.e2),
       )
     };
-  if (get_info(e).highlighted && !under_cursor) {
+  if (i.highlighted && !under_cursor) {
     highlight([dom]);
   } else {
     dom;

@@ -1,5 +1,5 @@
-open Terms;
 open Lang;
+open Terms;
 
 // These functions place a cursor in the first hole, if there is one
 let find_hole_name =

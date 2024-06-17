@@ -30,67 +30,54 @@ type zterm =
   | E1Let(name, pterm, zterm, pterm)
   | E2Let(name, pterm, pterm, zterm);
 
+type sterm =
+  | Hole
+  | Typ
+  | Mark(mark, sterm)
+  | Var(string, option(int))
+  | Arrow(name, sterm, sterm)
+  | Fun(name, sterm, sterm)
+  | Ap(sterm, sterm)
+  | Let(name, sterm, sterm, sterm)
+
+and mark =
+  | UnknownVar(string)
+  | Mismatch(sterm, sterm)
+  | FunNotArrow(option(sterm))
+  | NotTyp(option(sterm))
+  | Inconsistent;
+
+type context_entry = {
+  x: name,
+  t: sterm,
+  e: option(sterm),
+};
+
+type context = list(context_entry);
+
 type info = {
   ctx: context,
-  goal: option(term),
-  syn: option(term),
+  goal: option(sterm),
+  syn: option(sterm),
   cursed: bool,
   name_cursed: bool,
   cursor_inside: bool,
   highlighted: bool,
-}
+};
 
-and mark =
-  | UnknownVar(string)
-  | Mismatch(term, term)
-  | FunNotArrow(option(term))
-  | NotTyp(option(term))
-  | Inconsistent
+type term_bare('a) =
+  | Hole
+  | Typ
+  | Mark(mark, term('a))
+  | Var(string, option(int))
+  | Arrow(name, term('a), term('a))
+  | Fun(name, term('a), term('a))
+  | Ap(term('a), term('a))
+  | Let(name, term('a), term('a), term('a))
 
-and term =
-  | Hole({i: info})
-  | Typ({i: info})
-  | Mark({
-      i: info,
-      m: mark,
-      e: term,
-    })
-  | Var({
-      i: info,
-      x: string,
-      idx: option(int),
-    })
-  | Arrow({
-      i: info,
-      x: name,
-      t1: term,
-      t2: term,
-    })
-  | Fun({
-      i: info,
-      x: name,
-      t: term,
-      e: term,
-    })
-  | Ap({
-      i: info,
-      e1: term,
-      e2: term,
-    })
-  | Let({
-      i: info,
-      x: name,
-      t: term,
-      e1: term,
-      e2: term,
-    })
+and term('a) = ('a, term_bare('a));
 
-and context_entry = {
-  x: name,
-  t: term,
-  e: option(term),
-}
-and context = list(context_entry);
+type info_term = term(info);
 
 let default_info: info = {
   ctx: [],
